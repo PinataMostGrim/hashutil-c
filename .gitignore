@@ -1,4 +1,7 @@
 bin/
 
+# clangd
+compile_commands.json
+
 # sublime text
 *.sublime-workspace
