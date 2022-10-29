@@ -6,6 +6,31 @@
 			"index_exclude_patterns": [".cache/*", ".git/*", "*.exe", "*.obj", "*.ilk", "*.pdb"],
 		}
 	],
+    "build_systems":
+    [
+        {
+            // Requires "vcvarsall.bat" be accessible via PATH
+            "name": "Hashutil",
+            "shell_cmd": "call vcvarsall.bat x64 && mkdir \"$folder\\%BuildFolder%\" & cd \"$folder\\%BuildFolder%\" && cl %CommonCompilerFlags% \"$folder\\src\\hashutil.cpp\" /link %CommonLinkerFlags%",
+            "working_dir": "${file_path:${folder}}",
+            "env":
+            {
+                "BuildFolder": "bin",
+                "CommonCompilerFlags": "-nologo -Od -Gm- -MT -GR- -EHa- -Oi -W4 -FC",
+                "CommonLinkerFlags": "-opt:ref",
+            },
+            "selector": "source.c, source.cpp",
+            "file_regex": "^(..[^(]*)\\(([0-9]+)\\):():? (.*)$",
+            "quiet": true,
+            "variants" :
+            [
+                {
+                    "name": "x64 Debug",
+                    "shell_cmd": "call vcvarsall.bat x64 && mkdir \"$folder\\%BuildFolder%\" & cd \"$folder\\%BuildFolder%\" && cl %CommonCompilerFlags% -Zi -DEBUG:FULL \"$folder\\src\\hashutil.cpp\" /link %CommonLinkerFlags%",
+                },
+            ],
+        },
+    ],
     "settings":
     {
 		"LSP":
