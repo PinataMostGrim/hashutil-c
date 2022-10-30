@@ -20,6 +20,18 @@ GetStringLengthBits(char *string)
     return result * 8;
 }
 
+internal int
+MD5GetPaddingLengthBits(int messageLengthBits)
+{
+    int modulo = messageLengthBits % 512;
+    int paddingLength = modulo < 448 ? 448 - modulo : (448 + 512) - modulo;
+
+    Assert(messageLengthBits + paddingLength == 448);
+
+    return paddingLength;
+}
+
+
 int main(int argc, char const *argv[])
 {
     int returnCode = 0;
@@ -36,17 +48,19 @@ int main(int argc, char const *argv[])
         returnCode = 1;
     }
 
-    // Get the size of the message in bits
-    {
-        int messageLengthBits = GetStringLengthBits((char *)argv[1]);
-        printf("Message length: %i", messageLengthBits);
-    }
+    // char *messagePtr = (char *)argv[1];
+    char *messagePtr = (char *)"The quick brown fox jumped over the lazy dog";
 
+    // Get the size of the message in bits
+    int messageLengthBits = GetStringLengthBits(messagePtr);
     // Alternatively use standard library:
-    // {
-    //     int messageLengthBytes = strlen(argv[1]);
-    //     printf("Message length: %i", messageLengthBytes);
-    // }
+    // int messageLengthBytes = strlen(argv[1]);
+
+    // Get the padded size of the message
+    int paddingLength = MD5GetPaddingLengthBits(messageLengthBits);
+    printf("For a message length of '%i' bits, use a padding length of %i bits", messageLengthBits, paddingLength);
+
+    Assert(paddingLength == 96);
 
     return returnCode;
 }
