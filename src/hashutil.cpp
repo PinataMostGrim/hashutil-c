@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
+
 #include "hashutil.h"
 
 
@@ -37,6 +38,15 @@ GetStringLengthBits(char *string)
     return result * 8;
 }
 
+internal void
+MemoryCopy(const uint8 *source, uint8 *destination, size_t count)
+{
+    for (int i = 0; i < count; ++i)
+    {
+        *(destination + i) = *(source + i);
+    }
+}
+
 internal uint32
 MD5GetPaddingLengthBits(uint32 messageLengthBits)
 {
@@ -70,8 +80,6 @@ int main(int argc, char const *argv[])
     // Get the size of the message in bits
     message message = {};
     message.MessageLengthBits = GetStringLengthBits(messagePtr);
-    // Alternatively use standard library:
-    // message.MessageLengthBits = strlen(argv[1]);
 
     // Get the padded size of the message
     message.PaddingLengthBits = MD5GetPaddingLengthBits(message.MessageLengthBits);
@@ -86,6 +94,8 @@ int main(int argc, char const *argv[])
         return 2;
     }
 
+    // Copy the message into the allocated memory
+    MemoryCopy((uint8 *)messagePtr, (uint8 *)message.MessagePtr, (message.TotalLengthBits / 8));
 
     return returnCode;
 }
