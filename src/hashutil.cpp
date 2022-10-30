@@ -11,6 +11,7 @@
 
 typedef uint8_t uint8;
 typedef uint32_t uint32;
+typedef uint64_t uint64;
 
 
 global_variable int MAX_ARGS = 1;
@@ -109,6 +110,10 @@ int main(int argc, char const *argv[])
         *paddingPtr = 0;
         paddingPtr++;
     }
+
+    // Append the length of the message as a 64-bit representation
+    uint64 *sizePtr = (uint64 *)paddingPtr;
+    *sizePtr = (uint64)message.TotalLengthBits;
 
     return returnCode;
 }
