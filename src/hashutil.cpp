@@ -1,16 +1,33 @@
 #include <stdio.h>
+#include <stdint.h>
+#include <stdlib.h>
 #include "hashutil.h"
+
 
 #define internal static
 #define global_variable static
 
+
+typedef uint8_t uint8;
+typedef uint32_t uint32;
+
+
 global_variable int MAX_ARGS = 1;
 
 
-internal int
+struct message
+{
+    uint8 *MessagePtr;
+    uint32 MessageLengthBits;
+    uint32 PaddingLengthBits;
+    uint32 TotalLengthBits;
+};
+
+
+internal uint32
 GetStringLengthBits(char *string)
 {
-    int result = 0;
+    uint32 result = 0;
     while (*string != 0x00)
     {
         string++;
@@ -20,11 +37,11 @@ GetStringLengthBits(char *string)
     return result * 8;
 }
 
-internal int
-MD5GetPaddingLengthBits(int messageLengthBits)
+internal uint32
+MD5GetPaddingLengthBits(uint32 messageLengthBits)
 {
-    int modulo = messageLengthBits % 512;
-    int paddingLength = modulo < 448 ? 448 - modulo : (448 + 512) - modulo;
+    uint32 modulo = messageLengthBits % 512;
+    uint32 paddingLength = modulo < 448 ? 448 - modulo : (448 + 512) - modulo;
 
     Assert(messageLengthBits + paddingLength == 448);
 
@@ -48,19 +65,27 @@ int main(int argc, char const *argv[])
         returnCode = 1;
     }
 
-    // char *messagePtr = (char *)argv[1];
-    char *messagePtr = (char *)"The quick brown fox jumped over the lazy dog";
+    char *messagePtr = (char *)argv[1];
 
     // Get the size of the message in bits
-    int messageLengthBits = GetStringLengthBits(messagePtr);
+    message message = {};
+    message.MessageLengthBits = GetStringLengthBits(messagePtr);
     // Alternatively use standard library:
-    // int messageLengthBytes = strlen(argv[1]);
+    // message.MessageLengthBits = strlen(argv[1]);
 
     // Get the padded size of the message
-    int paddingLength = MD5GetPaddingLengthBits(messageLengthBits);
-    printf("For a message length of '%i' bits, use a padding length of %i bits", messageLengthBits, paddingLength);
+    message.PaddingLengthBits = MD5GetPaddingLengthBits(message.MessageLengthBits);
+    message.TotalLengthBits = message.MessageLengthBits + message.PaddingLengthBits + 64;
+    Assert(message.TotalLengthBits % 512 == 0);
 
-    Assert(paddingLength == 96);
+    // Allocate memory for the padded message
+    message.MessagePtr = (uint8 *)malloc(message.TotalLengthBits / 8);
+    if (message.MessagePtr == 0)
+    {
+        printf("Error: Unable to allocate memory for message");
+        return 2;
+    }
+
 
     return returnCode;
 }
