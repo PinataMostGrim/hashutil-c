@@ -97,5 +97,18 @@ int main(int argc, char const *argv[])
     // Copy the message into the allocated memory
     MemoryCopy((uint8 *)messagePtr, (uint8 *)message.MessagePtr, (message.TotalLengthBits / 8));
 
+    // Apply 1 padding to message
+    uint8 *paddingPtr = message.MessagePtr + (message.MessageLengthBits / 8);
+    *paddingPtr = (1 << 7);
+    paddingPtr++;
+
+    // Apply 0 padding to message
+    uint8 *paddingEndPtr = message.MessagePtr + (message.MessageLengthBits / 8) + (message.PaddingLengthBits / 8);
+    while (paddingPtr < paddingEndPtr)
+    {
+        *paddingPtr = 0;
+        paddingPtr++;
+    }
+
     return returnCode;
 }
