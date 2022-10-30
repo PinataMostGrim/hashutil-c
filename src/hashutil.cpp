@@ -1,12 +1,25 @@
 #include <stdio.h>
 #include "hashutil.h"
 
+#define global_variable static
+
+global_variable int MAX_ARGS = 1;
+
 int main(int argc, char const *argv[])
 {
-    for (int i = 0; i < argc; ++i)
+    int returnCode = 0;
+    int argCount = argc - 1;
+    if (argc == 1)
     {
-        printf("Argument %i: %s\n", i, argv[i]);
+        printf("Error: Incorrect number of command line arguments supplied; expected %i but received %i\n", MAX_ARGS, argCount);
+        return 2;
     }
 
-    return 0;
+    if (argCount > MAX_ARGS)
+    {
+        printf("Warning: Too many command line arguments supplied; expected %i but received %i\n", MAX_ARGS, argCount);
+        returnCode = 1;
+    }
+
+    return returnCode;
 }
