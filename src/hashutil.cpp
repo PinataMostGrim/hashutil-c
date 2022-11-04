@@ -54,7 +54,7 @@ MD5GetPaddingLengthBits(uint32 messageLengthBits)
     uint32 modulo = messageLengthBits % 512;
     uint32 paddingLength = modulo < 448 ? 448 - modulo : (448 + 512) - modulo;
 
-    Assert(messageLengthBits + paddingLength == 448);
+    Assert(modulo + paddingLength == 448);
 
     return paddingLength;
 }
