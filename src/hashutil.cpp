@@ -39,6 +39,7 @@ GetStringLengthBits(char *string)
     return result * 8;
 }
 
+
 internal void
 MemoryCopy(const uint8 *source, uint8 *destination, size_t count)
 {
@@ -48,8 +49,9 @@ MemoryCopy(const uint8 *source, uint8 *destination, size_t count)
     }
 }
 
+
 internal uint32
-MD5GetPaddingLengthBits(uint32 messageLengthBits)
+GetMD5PaddingLengthBits(uint32 messageLengthBits)
 {
     uint32 modulo = messageLengthBits % 512;
     uint32 paddingLength = modulo < 448 ? 448 - modulo : (448 + 512) - modulo;
@@ -57,6 +59,30 @@ MD5GetPaddingLengthBits(uint32 messageLengthBits)
     Assert(modulo + paddingLength == 448);
 
     return paddingLength;
+}
+
+
+internal char*
+GetMD5Hash(message *message)
+{
+    // Apply 1 padding to message
+    uint8 *paddingPtr = message->MessagePtr + (message->MessageLengthBits / 8);
+    *paddingPtr = (1 << 7);
+    paddingPtr++;
+
+    // Apply 0 padding to message
+    uint8 *paddingEndPtr = message->MessagePtr + (message->MessageLengthBits / 8) + (message->PaddingLengthBits / 8);
+    while (paddingPtr < paddingEndPtr)
+    {
+        *paddingPtr = 0;
+        paddingPtr++;
+    }
+
+    // Append the length of the message as a 64-bit representation
+    uint64 *sizePtr = (uint64 *)paddingPtr;
+    *sizePtr = (uint64)message->TotalLengthBits;
+
+    return (char *)"";
 }
 
 
@@ -83,7 +109,7 @@ int main(int argc, char const *argv[])
     message.MessageLengthBits = GetStringLengthBits(messagePtr);
 
     // Get the padded size of the message
-    message.PaddingLengthBits = MD5GetPaddingLengthBits(message.MessageLengthBits);
+    message.PaddingLengthBits = GetMD5PaddingLengthBits(message.MessageLengthBits);
     message.TotalLengthBits = message.MessageLengthBits + message.PaddingLengthBits + 64;
     Assert(message.TotalLengthBits % 512 == 0);
 
@@ -98,22 +124,8 @@ int main(int argc, char const *argv[])
     // Copy the message into the allocated memory
     MemoryCopy((uint8 *)messagePtr, (uint8 *)message.MessagePtr, (message.TotalLengthBits / 8));
 
-    // Apply 1 padding to message
-    uint8 *paddingPtr = message.MessagePtr + (message.MessageLengthBits / 8);
-    *paddingPtr = (1 << 7);
-    paddingPtr++;
-
-    // Apply 0 padding to message
-    uint8 *paddingEndPtr = message.MessagePtr + (message.MessageLengthBits / 8) + (message.PaddingLengthBits / 8);
-    while (paddingPtr < paddingEndPtr)
-    {
-        *paddingPtr = 0;
-        paddingPtr++;
-    }
-
-    // Append the length of the message as a 64-bit representation
-    uint64 *sizePtr = (uint64 *)paddingPtr;
-    *sizePtr = (uint64)message.TotalLengthBits;
+    char *hash = GetMD5Hash(&message);
+    printf("hash - %s\n", hash);
 
     return returnCode;
 }
