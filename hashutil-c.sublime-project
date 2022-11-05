@@ -19,7 +19,7 @@
                 "CommonCompilerFlags": "-nologo -Od -Gm- -MT -GR- -EHa- -Oi -W4 -FC",
                 "CommonLinkerFlags": "-opt:ref",
             },
-            "selector": "source.c, source.cpp",
+            "selector": "source.c, source.c++",
             "file_regex": "^(..[^(]*)\\(([0-9]+)\\):():? (.*)$",
             "quiet": true,
             "variants" :
