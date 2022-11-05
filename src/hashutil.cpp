@@ -82,6 +82,18 @@ GetMD5Hash(message *message)
     uint64 *sizePtr = (uint64 *)paddingPtr;
     *sizePtr = (uint64)message->TotalLengthBits;
 
+    // Initialize MD buffers
+    uint32 A = (0x01 << 24) | (0x23 << 16) | (0x45 << 8) | (0x67 << 0);
+    uint32 B = (0x89 << 24) | (0xAB << 16) | (0xCD << 8) | (0xEF << 0);
+    uint32 C = (0xfe << 24) | (0xdc << 16) | (0xba << 8) | (0x98 << 0);
+    uint32 D = (0x76 << 24) | (0x54 << 16) | (0x32 << 8) | (0x10 << 0);
+
+    uint32 *BufferA = &A;
+    uint32 *BufferB = &B;
+    uint32 *BufferC = &C;
+    uint32 *BufferD = &D;
+
+
     return (char *)"";
 }
 
