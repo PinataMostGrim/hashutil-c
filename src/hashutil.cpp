@@ -51,7 +51,7 @@ MemoryCopy(const uint8 *source, uint8 *destination, size_t count)
 
 
 internal uint32
-GetMD5PaddingLengthBits(uint32 messageLengthBits)
+MD5GetPaddingLengthBits(uint32 messageLengthBits)
 {
     uint32 modulo = messageLengthBits % 512;
     uint32 paddingLength = modulo < 448 ? 448 - modulo : (448 + 512) - modulo;
@@ -59,6 +59,42 @@ GetMD5PaddingLengthBits(uint32 messageLengthBits)
     Assert(modulo + paddingLength == 448);
 
     return paddingLength;
+}
+
+
+internal uint32
+MD5AuxF(uint32 x, uint32 y, uint32 z)
+{
+    // Function F(X,Y,Z) = XY v not(X) Z
+    uint32 result = (x & y) | (~x & z);
+    return result;
+}
+
+
+internal uint32
+MD5AuxG(uint32 x, uint32 y, uint32 z)
+{
+    // Function G(X,Y,Z) = XZ v Y not(Z)
+    uint32 result = (x & z) | (y & ~z);
+    return result;
+}
+
+
+internal uint32
+MD5AuxH(uint32 x, uint32 y, uint32 z)
+{
+    // Function H(X,Y,Z) = X xor Y xor Z
+    uint32 result = (x ^ y ^ z);
+    return result;
+}
+
+
+internal uint32
+MD5AuxI(uint32 x, uint32 y, uint32 z)
+{
+    // Function I(X,Y,Z) = Y xor (X v not(Z))
+    uint32 result = y ^ (x | ~z);
+    return result;
 }
 
 
@@ -121,7 +157,7 @@ int main(int argc, char const *argv[])
     message.MessageLengthBits = GetStringLengthBits(messagePtr);
 
     // Get the padded size of the message
-    message.PaddingLengthBits = GetMD5PaddingLengthBits(message.MessageLengthBits);
+    message.PaddingLengthBits = MD5GetPaddingLengthBits(message.MessageLengthBits);
     message.TotalLengthBits = message.MessageLengthBits + message.PaddingLengthBits + 64;
     Assert(message.TotalLengthBits % 512 == 0);
 
