@@ -99,6 +99,13 @@ MD5AuxI(uint32 x, uint32 y, uint32 z)
 }
 
 
+internal uint32
+MD5RotateLeft(uint32 x, int s)
+{
+    return (x << s) | (x >> (32-s));
+}
+
+
 internal char*
 GetMD5Hash(message *message)
 {
