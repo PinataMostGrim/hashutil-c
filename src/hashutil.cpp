@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <math.h>
 
 #include "hashutil.h"
 
@@ -129,6 +130,14 @@ GetMD5Hash(message *message)
     uint32 *BufferC = &C;
     uint32 *BufferD = &D;
 
+    // Generate sin table T
+    uint32 T[64] = {};
+    for (int i = 0; i < 64; ++i)
+    {
+        double s = sin(i + 1);
+        s = s < 0 ? s * -1 : s;
+        T[i] = uint32(s * 4294967296);
+    }
 
     return (char *)"";
 }
