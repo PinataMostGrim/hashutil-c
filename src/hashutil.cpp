@@ -105,6 +105,44 @@ MD5RotateLeft(uint32 x, int s)
     return (x << s) | (x >> (32-s));
 }
 
+internal uint32
+MD5TransformFF(uint32 A, uint32 B, uint32 C, uint32 D, uint32 X, int S, uint32 T)
+{
+    // a = b + ((a + F(b,c,d) + X[k] + T[i]) <<< s)
+    uint32 result = A + MD5AuxF(B, C, D) + X + T;
+    result = MD5RotateLeft(result, S);
+    return B + result;
+}
+
+
+internal uint32
+MD5TransformGG(uint32 A, uint32 B, uint32 C, uint32 D, uint32 X, int S, uint32 T)
+{
+    // a = b + ((a + G(b,c,d) + X[k] + T[i]) <<< s)
+    uint32 result = A + MD5AuxG(B, C, D) + X + T;
+    result = MD5RotateLeft(result, S);
+    return B + result;
+}
+
+
+internal uint32
+MD5TransformHH(uint32 A, uint32 B, uint32 C, uint32 D, uint32 X, int S, uint32 T)
+{
+    // a = b + ((a + H(b,c,d) + X[k] + T[i]) <<< s)
+    uint32 result = A + MD5AuxH(B, C, D) + X + T;
+    result = MD5RotateLeft(result, S);
+    return B + result;
+}
+
+
+internal uint32
+MD5TransformII(uint32 A, uint32 B, uint32 C, uint32 D, uint32 X, int S, uint32 T)
+{
+    // a = b + ((a + H(b,c,d) + X[k] + T[i]) <<< s)
+    uint32 result = A + MD5AuxI(B, C, D) + X + T;
+    result = MD5RotateLeft(result, S);
+    return B + result;
+}
 
 internal char*
 GetMD5Hash(message *message)
