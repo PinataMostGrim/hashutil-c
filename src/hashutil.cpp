@@ -163,7 +163,7 @@ GetMD5Hash(message *message)
 
     // Append the length of the message as a 64-bit representation
     uint64 *sizePtr = (uint64 *)paddingPtr;
-    *sizePtr = (uint64)message->TotalLengthBits;
+    *sizePtr = (uint64)message->MessageLengthBits;
 
     // Initialize MD buffers
     uint32 A = 0x67452301;
