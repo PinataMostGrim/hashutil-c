@@ -182,13 +182,15 @@ GetMD5Hash(message *message)
 
     uint32 X[16] = {};
 
+    // Note (Aaron): Iterate over 64 byte blocks of the message
+    // 'i' represents the byte position in the message
     for (uint32 i = 0;
-         (i * 16) < (message->TotalLengthBits / 8);
-         i++)
+         i < (message->TotalLengthBits / 8);
+         i+=64)
     {
         for (int j = 0; j < 16; ++j)
         {
-            X[j] = *(message->MessagePtr + (i * 16) + j);
+            X[j] = *(uint32 *)((message->MessagePtr + i + (j * 4)));
         }
 
         // Snapshot initial state of buffers
@@ -288,7 +290,29 @@ GetMD5Hash(message *message)
         D = D + DD;
     }
 
-    sprintf_s(message->Digest, 33, "%x%x%x%x", A, B, C, D);
+    // Generate the digest and store in struct
+    uint8 digest[16] = {};
+    digest[0] = (uint8)(A & 0xFF);
+    digest[1] = (uint8)((A >> 8) & 0xFF);
+    digest[2] = (uint8)((A >> 16) & 0xFF);
+    digest[3] = (uint8)((A >> 24) & 0xFF);
+
+    digest[4] = (uint8)(B & 0xFF);
+    digest[5] = (uint8)((B >> 8) & 0xFF);
+    digest[6] = (uint8)((B >> 16) & 0xFF);
+    digest[7] = (uint8)((B >> 24) & 0xFF);
+
+    digest[8] = (uint8)(C & 0xFF);
+    digest[9] = (uint8)((C >> 8) & 0xFF);
+    digest[10] = (uint8)((C >> 16) & 0xFF);
+    digest[11] = (uint8)((C >> 24) & 0xFF);
+
+    digest[12] = (uint8)(D & 0xFF);
+    digest[13] = (uint8)((D >> 8) & 0xFF);
+    digest[14] = (uint8)((D >> 16) & 0xFF);
+    digest[15] = (uint8)((D >> 24) & 0xFF);
+
+    sprintf_s(message->Digest, 33, "%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x", digest[0], digest[1], digest[2], digest[3], digest[4], digest[5], digest[6], digest[7], digest[8], digest[9], digest[10], digest[11], digest[12], digest[13], digest[14], digest[15]);
 }
 
 
@@ -328,7 +352,7 @@ int main(int argc, char const *argv[])
     }
 
     // Copy the message into the allocated memory
-    MemoryCopy((uint8 *)messagePtr, (uint8 *)message.MessagePtr, (message.TotalLengthBits / 8));
+    MemoryCopy((uint8 *)messagePtr, (uint8 *)message.MessagePtr, (message.MessageLengthBits / 8));
 
     GetMD5Hash(&message);
     printf("%s\n", message.Digest);
