@@ -18,13 +18,15 @@ typedef uint64_t uint64;
 global_variable int MAX_ARGS = 1;
 
 
-struct message
+struct md5_context
 {
     uint8 *MessagePtr = 0;
     uint32 MessageLengthBits = 0;
     uint32 PaddingLengthBits = 0;
     uint32 TotalLengthBits = 0;
-    char Digest[33] = {};
+    uint32 State[4] = { 0x67452301, 0xefcdab89, 0x98badcfe, 0x10325476 };
+    uint8 Digest[16] = {};
+    char DigestStr[33] = {};
 };
 
 
@@ -146,15 +148,15 @@ MD5TransformII(uint32 A, uint32 B, uint32 C, uint32 D, uint32 X, int S, uint32 T
 
 
 internal void
-GetMD5Hash(message *message)
+GetMD5Hash(md5_context *context)
 {
     // Apply 1 padding to message
-    uint8 *paddingPtr = message->MessagePtr + (message->MessageLengthBits / 8);
+    uint8 *paddingPtr = context->MessagePtr + (context->MessageLengthBits / 8);
     *paddingPtr = (1 << 7);
     paddingPtr++;
 
     // Apply 0 padding to message
-    uint8 *paddingEndPtr = message->MessagePtr + (message->MessageLengthBits / 8) + (message->PaddingLengthBits / 8);
+    uint8 *paddingEndPtr = context->MessagePtr + (context->MessageLengthBits / 8) + (context->PaddingLengthBits / 8);
     while (paddingPtr < paddingEndPtr)
     {
         *paddingPtr = 0;
@@ -163,13 +165,7 @@ GetMD5Hash(message *message)
 
     // Append the length of the message as a 64-bit representation
     uint64 *sizePtr = (uint64 *)paddingPtr;
-    *sizePtr = (uint64)message->MessageLengthBits;
-
-    // Initialize MD buffers
-    uint32 A = 0x67452301;
-    uint32 B = 0xefcdab89;
-    uint32 C = 0x98badcfe;
-    uint32 D = 0x10325476;
+    *sizePtr = (uint64)context->MessageLengthBits;
 
     // Generate sin table T
     uint32 T[65] = {};
@@ -185,19 +181,18 @@ GetMD5Hash(message *message)
     // Note (Aaron): Iterate over 64 byte blocks of the message
     // 'i' represents the byte position in the message
     for (uint32 i = 0;
-         i < (message->TotalLengthBits / 8);
+         i < (context->TotalLengthBits / 8);
          i+=64)
     {
         for (int j = 0; j < 16; ++j)
         {
-            X[j] = *(uint32 *)((message->MessagePtr + i + (j * 4)));
+            X[j] = *(uint32 *)((context->MessagePtr + i + (j * 4)));
         }
 
-        // Snapshot initial state of buffers
-        uint32 AA = A;
-        uint32 BB = B;
-        uint32 CC = C;
-        uint32 DD = D;
+        uint32 A = context->State[0];
+        uint32 B = context->State[1];
+        uint32 C = context->State[2];
+        uint32 D = context->State[3];
 
         // Perform transformations
         // Round 1
@@ -284,35 +279,23 @@ GetMD5Hash(message *message)
         C = MD5TransformII(C, D, A, B, X[2], 15, T[63]);
         B = MD5TransformII(B, C, D, A, X[9], 21, T[64]);
 
-        A = A + AA;
-        B = B + BB;
-        C = C + CC;
-        D = D + DD;
+        context->State[0] += A;
+        context->State[1] += B;
+        context->State[2] += C;
+        context->State[3] += D;
     }
 
-    // Generate the digest and store in struct
-    uint8 digest[16] = {};
-    digest[0] = (uint8)(A & 0xFF);
-    digest[1] = (uint8)((A >> 8) & 0xFF);
-    digest[2] = (uint8)((A >> 16) & 0xFF);
-    digest[3] = (uint8)((A >> 24) & 0xFF);
+    // Extract digest values, convert to string, and store in context
+    unsigned int i, j;
+    for (i = 0, j = 0; i < 4; ++i, j+=4)
+    {
+        context->Digest[j] = (uint8)(context->State[i] & 0xFF);
+        context->Digest[j+1] = (uint8)((context->State[i] >> 8) & 0xFF);
+        context->Digest[j+2] = (uint8)((context->State[i] >> 16) & 0xFF);
+        context->Digest[j+3] = (uint8)((context->State[i] >> 24) & 0xFF);
 
-    digest[4] = (uint8)(B & 0xFF);
-    digest[5] = (uint8)((B >> 8) & 0xFF);
-    digest[6] = (uint8)((B >> 16) & 0xFF);
-    digest[7] = (uint8)((B >> 24) & 0xFF);
-
-    digest[8] = (uint8)(C & 0xFF);
-    digest[9] = (uint8)((C >> 8) & 0xFF);
-    digest[10] = (uint8)((C >> 16) & 0xFF);
-    digest[11] = (uint8)((C >> 24) & 0xFF);
-
-    digest[12] = (uint8)(D & 0xFF);
-    digest[13] = (uint8)((D >> 8) & 0xFF);
-    digest[14] = (uint8)((D >> 16) & 0xFF);
-    digest[15] = (uint8)((D >> 24) & 0xFF);
-
-    sprintf_s(message->Digest, 33, "%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x", digest[0], digest[1], digest[2], digest[3], digest[4], digest[5], digest[6], digest[7], digest[8], digest[9], digest[10], digest[11], digest[12], digest[13], digest[14], digest[15]);
+        sprintf_s(context->DigestStr + (j*2), 9,"%02x%02x%02x%02x", context->Digest[j], context->Digest[j+1], context->Digest[j+2], context->Digest[i*4+3]);
+    }
 }
 
 
@@ -335,7 +318,7 @@ int main(int argc, char const *argv[])
     char *messagePtr = (char *)argv[1];
 
     // Get the size of the message in bits
-    message message = {};
+    md5_context message = {};
     message.MessageLengthBits = GetStringLengthBits(messagePtr);
 
     // Get the padded size of the message
@@ -355,7 +338,7 @@ int main(int argc, char const *argv[])
     MemoryCopy((uint8 *)messagePtr, (uint8 *)message.MessagePtr, (message.MessageLengthBits / 8));
 
     GetMD5Hash(&message);
-    printf("%s\n", message.Digest);
+    printf("%s\n", message.DigestStr);
 
     return returnCode;
 }
