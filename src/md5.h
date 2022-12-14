@@ -30,6 +30,7 @@ MD5GetPaddingLengthBits(uint32 messageLengthBits)
 }
 
 
+// #define MD5AuxF(X, Y, Z) (((X) & (Y)) | ((~X) & (Z)))
 internal uint32
 MD5AuxF(uint32 x, uint32 y, uint32 z)
 {
@@ -39,6 +40,7 @@ MD5AuxF(uint32 x, uint32 y, uint32 z)
 }
 
 
+// #define MD5AuxG(X, Y, Z) (((X) & (Z)) | ((Y) & (~Z)))
 internal uint32
 MD5AuxG(uint32 x, uint32 y, uint32 z)
 {
@@ -48,6 +50,7 @@ MD5AuxG(uint32 x, uint32 y, uint32 z)
 }
 
 
+// #define MD5AuxH(X, Y, Z) ((X) ^ (Y) ^ (Z))
 internal uint32
 MD5AuxH(uint32 x, uint32 y, uint32 z)
 {
@@ -57,6 +60,7 @@ MD5AuxH(uint32 x, uint32 y, uint32 z)
 }
 
 
+// #define MD5AuxI(X, Y, Z) ((Y) ^ ((X) | (~Z)))
 internal uint32
 MD5AuxI(uint32 x, uint32 y, uint32 z)
 {
