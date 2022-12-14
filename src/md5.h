@@ -155,6 +155,13 @@ MD5GetHash(md5_context *context)
     {
         for (int j = 0; j < 16; ++j)
         {
+            // Note (Aaron): This should work for big-endian systems?
+            // X[j] = (uint32)(*(context->MessagePtr + i + (j * 4)))
+            //     | (uint32)(*(context->MessagePtr + i + (j * 4) + 1) << 8)
+            //     | (uint32)(*(context->MessagePtr + i + (j * 4) + 2) << 16)
+            //     | (uint32)(*(context->MessagePtr + i + (j * 4) + 3) << 24);
+
+            // Note (Aaron): This will only work on little-endian systems (with no alignment restrictions)
             X[j] = *(uint32 *)((context->MessagePtr + i + (j * 4)));
         }
 
