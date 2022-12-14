@@ -7,6 +7,15 @@
         1 - Slow code welcome
 */
 
+#include <stdint.h>
+
+#define internal static
+#define global_variable static
+
+typedef uint8_t uint8;
+typedef uint32_t uint32;
+typedef uint64_t uint64;
+
 #if HASHUTIL_SLOW
 #define Assert(Expression) if (!(Expression)) {*(int *)0 = 0;}
 #else
