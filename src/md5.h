@@ -2,6 +2,7 @@
 
 #include <math.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "hashutil.h"
 
@@ -16,6 +17,32 @@ struct md5_context
     uint8 Digest[16] = {};
     char DigestStr[33] = {};
 };
+
+
+// Note (Aaron): This is a naive implementation
+internal uint32
+GetStringLengthBits(char *string)
+{
+    uint32 result = 0;
+    while (*string != 0x00)
+    {
+        string++;
+        result++;
+    }
+
+    return result * 8;
+}
+
+
+// Note (Aaron): This is a naive implementation
+internal void
+MemoryCopy(const uint8 *source, uint8 *destination, size_t count)
+{
+    for (int i = 0; i < count; ++i)
+    {
+        *(destination + i) = *(source + i);
+    }
+}
 
 
 internal uint32
@@ -280,6 +307,35 @@ MD5GetHash(md5_context *context)
 
         sprintf_s(context->DigestStr + (j*2), 9,"%02x%02x%02x%02x", context->Digest[j], context->Digest[j+1], context->Digest[j+2], context->Digest[i*4+3]);
     }
+}
+
+
+internal md5_context
+MD5HashString(char *messagePtr)
+{
+    md5_context result = {};
+
+    result.MessageLengthBits = GetStringLengthBits(messagePtr);
+
+    // Get the padded size of the message
+    result.PaddingLengthBits = MD5GetPaddingLengthBits(result.MessageLengthBits);
+    result.TotalLengthBits = result.MessageLengthBits + result.PaddingLengthBits + 64;
+    Assert(result.TotalLengthBits % 512 == 0);
+
+    // Allocate memory for the padded message
+    result.MessagePtr = (uint8 *)malloc(result.TotalLengthBits / 8);
+    if (result.MessagePtr == 0)
+    {
+        printf("Error: Unable to allocate memory for message");
+        exit(2);
+    }
+
+    // Copy the message into the allocated memory
+    MemoryCopy((uint8 *)messagePtr, (uint8 *)result.MessagePtr, (result.MessageLengthBits / 8));
+
+    MD5GetHash(&result);
+
+    return result;
 }
 
 #define MD5_H
