@@ -261,6 +261,12 @@ MD5GetHash(md5_context *context)
         context->State[3] += D;
     }
 
+    // Zero out X[] to prevent sensitive information being left in memory
+    for (int i = 0; i < ArrayCount(X); ++i)
+    {
+        X[i] = 0;
+    }
+
     // Extract digest values, convert to string, and store in context
     unsigned int i, j;
     for (i = 0, j = 0; i < 4; ++i, j+=4)
