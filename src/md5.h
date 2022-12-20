@@ -273,10 +273,10 @@ MD5GetHash(md5_context *context)
     unsigned int i, j;
     for (i = 0, j = 0; i < 4; ++i, j+=4)
     {
-        context->Digest[j] = (uint8)(context->State[i] & 0xFF);
-        context->Digest[j+1] = (uint8)((context->State[i] >> 8) & 0xFF);
-        context->Digest[j+2] = (uint8)((context->State[i] >> 16) & 0xFF);
-        context->Digest[j+3] = (uint8)((context->State[i] >> 24) & 0xFF);
+        context->Digest[j] = (uint8)(context->State[i] & 0xff);
+        context->Digest[j+1] = (uint8)((context->State[i] >> 8) & 0xff);
+        context->Digest[j+2] = (uint8)((context->State[i] >> 16) & 0xff);
+        context->Digest[j+3] = (uint8)((context->State[i] >> 24) & 0xff);
 
         sprintf_s(context->DigestStr + (j*2), 9,"%02x%02x%02x%02x", context->Digest[j], context->Digest[j+1], context->Digest[j+2], context->Digest[i*4+3]);
     }
