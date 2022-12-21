@@ -250,11 +250,7 @@ MD5UpdateHash(md5_context *context, uint8 *ptr, uint32 byteLength)
     }
 
     // Zero out block[] to prevent sensitive information being left in memory
-    // MemoryZero(&block, ArrayCount(block));
-    for (int i = 0; i < ArrayCount(block); ++i)
-    {
-        block[i] = 0;
-    }
+    MemoryZero((uint8 *)&block, ArrayCount(block));
 }
 
 
@@ -278,49 +274,43 @@ MD5CalculateDigest(md5_context *context)
 internal md5_context
 MD5HashString(char *messagePtr)
 {
+    const uint32 CHUNK_BYTE_COUNT = 64;
+    const uint32 BUFFER_BYTE_SIZE = 128;
+
     md5_context result = {};
-    int byteCounter = 0;
+    int byteCount = 0;
 
     while (*messagePtr != 0x00)
     {
         messagePtr++;
         result.MessageLengthBits += 8;
-        byteCounter++;
+        byteCount++;
 
-        if(byteCounter == 64)
+        if(byteCount == CHUNK_BYTE_COUNT)
         {
-            MD5UpdateHash(&result, (uint8 *)(messagePtr - byteCounter), byteCounter);
-            byteCounter = 0;
+            MD5UpdateHash(&result, (uint8 *)(messagePtr - byteCount), byteCount);
+            byteCount = 0;
         }
     }
 
     // Allocate memory to store the message remainder + padding + encoded message length
-    uint8 *messageRemainderPtr;
-    bool useExtendedMargine = byteCounter >= 56;
+    uint8 buffer[BUFFER_BYTE_SIZE] = {};
+    uint8 *bufferPtr = buffer;
+    bool useExtendedMargine = (byteCount >= (CHUNK_BYTE_COUNT - 8));
 
-    if (!useExtendedMargine)
-    {
-        // Message remainder fits inside the 448 bit margine
-        messageRemainderPtr = (uint8 *)malloc(64);
-    }
-    else
-    {
-        // Message remainder exceeds the 448 bit margine so we apply extra padding to wrap us back to 448
-        messageRemainderPtr = (uint8 *)malloc(128);
-    }
-
-    // Copy message remainder into the allocated memory
-    MemoryCopy((uint8 *)(messagePtr - byteCounter), messageRemainderPtr, byteCounter);
+    // Copy message remainder into the buffer
+    Assert(byteCount < BUFFER_BYTE_SIZE);
+    MemoryCopy((uint8 *)(messagePtr - byteCount), bufferPtr, byteCount);
 
     // Apply padded 1
-    uint8 *paddingPtr = messageRemainderPtr + byteCounter;
+    uint8 *paddingPtr = bufferPtr + byteCount;
     *paddingPtr = (1 << 7);
     paddingPtr++;
 
     // Apply padded 0s
     uint8 *paddingEndPtr = useExtendedMargine
-        ? messageRemainderPtr + 120
-        : messageRemainderPtr + 56;
+        ? bufferPtr + BUFFER_BYTE_SIZE - 8
+        : bufferPtr + CHUNK_BYTE_COUNT - 8;
 
     while (paddingPtr < paddingEndPtr)
     {
@@ -333,12 +323,12 @@ MD5HashString(char *messagePtr)
     *sizePtr = (uint64)result.MessageLengthBits;
 
     // Perform final hash update
-    byteCounter = useExtendedMargine ? 128 : 64;
-    Assert(byteCounter == (paddingPtr - messageRemainderPtr) + sizeof(uint64));
-    MD5UpdateHash(&result, messageRemainderPtr, byteCounter);
+    byteCount = useExtendedMargine ? BUFFER_BYTE_SIZE : CHUNK_BYTE_COUNT;
+    Assert(byteCount == (paddingPtr - bufferPtr) + sizeof(uint64));
+    MD5UpdateHash(&result, bufferPtr, byteCount);
 
     // Zero out message remainder to prevent sensitive information being left in memory
-    MemoryZero(messageRemainderPtr, byteCounter);
+    MemoryZero(bufferPtr, byteCount);
 
     // Calculate hash and return
     MD5CalculateDigest(&result);
