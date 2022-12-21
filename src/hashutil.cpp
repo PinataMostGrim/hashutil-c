@@ -19,7 +19,7 @@ int main(int argc, char const *argv[])
         printf("Warning: Too many command line arguments supplied; expected %i but received %i\n", MAX_ARGS, argCount);
     }
 
-    unsigned char *messagePtr = (unsigned char *)argv[1];
+    char *messagePtr = (char *)argv[1];
 
 
     md5_context result = MD5HashString(messagePtr);

@@ -124,7 +124,7 @@ MD5TransformII(uint32 A, uint32 B, uint32 C, uint32 D, uint32 X, int S, uint32 T
 
 
 internal void
-MD5UpdateHash(md5_context *context, unsigned char *ptr, uint32 byteLength)
+MD5UpdateHash(md5_context *context, uint8 *ptr, uint32 byteLength)
 {
     // Assert that the block length is divisible by 64 bytes
     Assert(byteLength % 64 == 0);
@@ -133,8 +133,8 @@ MD5UpdateHash(md5_context *context, unsigned char *ptr, uint32 byteLength)
 
     // Generate sin table T
 
-    // Note (Aaron): Iterate over 64 byte blocks of the data
-    // 'i' represents the byte position in the data
+    // Note (Aaron): Iterate over 64 byte blocks of the message.
+    // 'i' represents the byte position in the message.
     for (uint32 i = 0;
          i < (byteLength);
          i+=64)
@@ -276,7 +276,7 @@ MD5CalculateDigest(md5_context *context)
 
 
 internal md5_context
-MD5HashString(unsigned char *messagePtr)
+MD5HashString(char *messagePtr)
 {
     md5_context result = {};
     int byteCounter = 0;
@@ -289,38 +289,38 @@ MD5HashString(unsigned char *messagePtr)
 
         if(byteCounter == 64)
         {
-            MD5UpdateHash(&result, messagePtr - byteCounter, byteCounter);
+            MD5UpdateHash(&result, (uint8 *)(messagePtr - byteCounter), byteCounter);
             byteCounter = 0;
         }
     }
 
     // Allocate memory to store the message remainder + padding + encoded message length
-    uint8 *messageRemainterPtr;
+    uint8 *messageRemainderPtr;
     bool useExtendedMargine = byteCounter >= 56;
 
     if (!useExtendedMargine)
     {
         // Message remainder fits inside the 448 bit margine
-        messageRemainterPtr = (uint8 *)malloc(64);
+        messageRemainderPtr = (uint8 *)malloc(64);
     }
     else
     {
         // Message remainder exceeds the 448 bit margine so we apply extra padding to wrap us back to 448
-        messageRemainterPtr = (uint8 *)malloc(128);
+        messageRemainderPtr = (uint8 *)malloc(128);
     }
 
     // Copy message remainder into the allocated memory
-    MemoryCopy(messagePtr - byteCounter, messageRemainterPtr, byteCounter);
+    MemoryCopy((uint8 *)(messagePtr - byteCounter), messageRemainderPtr, byteCounter);
 
     // Apply padded 1
-    uint8 *paddingPtr = messageRemainterPtr + byteCounter;
+    uint8 *paddingPtr = messageRemainderPtr + byteCounter;
     *paddingPtr = (1 << 7);
     paddingPtr++;
 
     // Apply padded 0s
     uint8 *paddingEndPtr = useExtendedMargine
-        ? messageRemainterPtr + 120
-        : messageRemainterPtr + 56;
+        ? messageRemainderPtr + 120
+        : messageRemainderPtr + 56;
 
     while (paddingPtr < paddingEndPtr)
     {
@@ -334,11 +334,11 @@ MD5HashString(unsigned char *messagePtr)
 
     // Perform final hash update
     byteCounter = useExtendedMargine ? 128 : 64;
-    Assert(byteCounter == (paddingPtr - messageRemainterPtr) + sizeof(uint64));
-    MD5UpdateHash(&result, messageRemainterPtr, byteCounter);
+    Assert(byteCounter == (paddingPtr - messageRemainderPtr) + sizeof(uint64));
+    MD5UpdateHash(&result, messageRemainderPtr, byteCounter);
 
     // Zero out message remainder to prevent sensitive information being left in memory
-    MemoryZero(messageRemainterPtr, byteCounter);
+    MemoryZero(messageRemainderPtr, byteCounter);
 
     // Calculate hash and return
     MD5CalculateDigest(&result);
