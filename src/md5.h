@@ -9,29 +9,11 @@
 
 struct md5_context
 {
-    uint8 *MessagePtr = 0;
     uint32 MessageLengthBits = 0;
-    uint32 PaddingLengthBits = 0;
-    uint32 TotalLengthBits = 0;
     uint32 State[4] = { 0x67452301, 0xefcdab89, 0x98badcfe, 0x10325476 };
     uint8 Digest[16] = {};
     char DigestStr[33] = {};
 };
-
-
-// Note (Aaron): This is a naive implementation
-internal uint32
-GetStringLengthBits(char *string)
-{
-    uint32 result = 0;
-    while (*string != 0x00)
-    {
-        string++;
-        result++;
-    }
-
-    return result * 8;
-}
 
 
 // Note (Aaron): This is a naive implementation
@@ -45,16 +27,15 @@ MemoryCopy(const uint8 *source, uint8 *destination, size_t count)
 }
 
 
-internal uint32
-MD5GetPaddingLengthBits(uint32 messageLengthBits)
+internal void
+MemoryZero(uint8 *ptr, size_t count)
 {
-    uint32 modulo = messageLengthBits % 512;
-    uint32 paddingLength = modulo < 448 ? 448 - modulo : (448 + 512) - modulo;
-
-    Assert(modulo + paddingLength == 448);
-
-    return paddingLength;
+    for (int i = 0; i < count; ++i)
+    {
+        *(ptr + i) = 0;
+    }
 }
+
 
 
 // #define MD5AuxF(X, Y, Z) (((X) & (Y)) | ((~X) & (Z)))
@@ -144,24 +125,12 @@ MD5TransformII(uint32 A, uint32 B, uint32 C, uint32 D, uint32 X, int S, uint32 T
 
 
 internal void
-MD5GetHash(md5_context *context)
+MD5UpdateHash(md5_context *context, unsigned char *ptr, uint32 byteLength)
 {
-    // Apply 1 padding to message
-    uint8 *paddingPtr = context->MessagePtr + (context->MessageLengthBits / 8);
-    *paddingPtr = (1 << 7);
-    paddingPtr++;
+    // Assert that the block length is divisible by 64 bytes
+    Assert(byteLength % 64 == 0);
 
-    // Apply 0 padding to message
-    uint8 *paddingEndPtr = context->MessagePtr + (context->MessageLengthBits / 8) + (context->PaddingLengthBits / 8);
-    while (paddingPtr < paddingEndPtr)
-    {
-        *paddingPtr = 0;
-        paddingPtr++;
-    }
-
-    // Append the length of the message as a 64-bit representation
-    uint64 *sizePtr = (uint64 *)paddingPtr;
-    *sizePtr = (uint64)context->MessageLengthBits;
+    uint32 block[16] = {};
 
     // Generate sin table T
     uint32 T[65] = {};
@@ -172,26 +141,24 @@ MD5GetHash(md5_context *context)
         T[i] = uint32(s * 4294967296);
     }
 
-    uint32 X[16] = {};
-
-    // Note (Aaron): Iterate over 64 byte blocks of the message
-    // 'i' represents the byte position in the message
+    // Note (Aaron): Iterate over 64 byte blocks of the data
+    // 'i' represents the byte position in the data
     for (uint32 i = 0;
-         i < (context->TotalLengthBits / 8);
+         i < (byteLength);
          i+=64)
     {
         for (int j = 0; j < 16; ++j)
         {
             // Note (Aaron): This will work regardless of endianness
-            X[j] = (uint32)(*(context->MessagePtr + i + (j * 4)))
-                | (uint32)(*(context->MessagePtr + i + (j * 4) + 1) << 8)
-                | (uint32)(*(context->MessagePtr + i + (j * 4) + 2) << 16)
-                | (uint32)(*(context->MessagePtr + i + (j * 4) + 3) << 24);
+            block[j] = (uint32)(*(ptr + i + (j * 4)))
+                | (uint32)(*(ptr + i + (j * 4) + 1) << 8)
+                | (uint32)(*(ptr + i + (j * 4) + 2) << 16)
+                | (uint32)(*(ptr + i + (j * 4) + 3) << 24);
 
             // Note (Aaron): This will only work on little-endian systems (with no alignment restrictions)
             // uint32 endianness = 0xdeadbeef;
             // Assert((*(unsigned char *)&endianness) == 0xef)
-            // X[j] = *(uint32 *)((context->MessagePtr + i + (j * 4)));
+            // block[j] = *(uint32 *)((context->MessagePtr + i + (j * 4)));
         }
 
         uint32 A = context->State[0];
@@ -201,88 +168,88 @@ MD5GetHash(md5_context *context)
 
         // Perform transformations
         // Round 1
-        A = MD5TransformFF(A, B, C, D, X[0], 7, T[1]);
-        D = MD5TransformFF(D, A, B, C, X[1], 12, T[2]);
-        C = MD5TransformFF(C, D, A, B, X[2], 17, T[3]);
-        B = MD5TransformFF(B, C, D, A, X[3], 22, T[4]);
+        A = MD5TransformFF(A, B, C, D, block[0], 7, T[1]);
+        D = MD5TransformFF(D, A, B, C, block[1], 12, T[2]);
+        C = MD5TransformFF(C, D, A, B, block[2], 17, T[3]);
+        B = MD5TransformFF(B, C, D, A, block[3], 22, T[4]);
 
-        A = MD5TransformFF(A, B, C, D, X[4], 7, T[5]);
-        D = MD5TransformFF(D, A, B, C, X[5], 12, T[6]);
-        C = MD5TransformFF(C, D, A, B, X[6], 17, T[7]);
-        B = MD5TransformFF(B, C, D, A, X[7], 22, T[8]);
+        A = MD5TransformFF(A, B, C, D, block[4], 7, T[5]);
+        D = MD5TransformFF(D, A, B, C, block[5], 12, T[6]);
+        C = MD5TransformFF(C, D, A, B, block[6], 17, T[7]);
+        B = MD5TransformFF(B, C, D, A, block[7], 22, T[8]);
 
-        A = MD5TransformFF(A, B, C, D, X[8], 7, T[9]);
-        D = MD5TransformFF(D, A, B, C, X[9], 12, T[10]);
-        C = MD5TransformFF(C, D, A, B, X[10], 17, T[11]);
-        B = MD5TransformFF(B, C, D, A, X[11], 22, T[12]);
+        A = MD5TransformFF(A, B, C, D, block[8], 7, T[9]);
+        D = MD5TransformFF(D, A, B, C, block[9], 12, T[10]);
+        C = MD5TransformFF(C, D, A, B, block[10], 17, T[11]);
+        B = MD5TransformFF(B, C, D, A, block[11], 22, T[12]);
 
-        A = MD5TransformFF(A, B, C, D, X[12], 7, T[13]);
-        D = MD5TransformFF(D, A, B, C, X[13], 12, T[14]);
-        C = MD5TransformFF(C, D, A, B, X[14], 17, T[15]);
-        B = MD5TransformFF(B, C, D, A, X[15], 22, T[16]);
+        A = MD5TransformFF(A, B, C, D, block[12], 7, T[13]);
+        D = MD5TransformFF(D, A, B, C, block[13], 12, T[14]);
+        C = MD5TransformFF(C, D, A, B, block[14], 17, T[15]);
+        B = MD5TransformFF(B, C, D, A, block[15], 22, T[16]);
 
         // Round 2
-        A = MD5TransformGG(A, B, C, D, X[1], 5, T[17]);
-        D = MD5TransformGG(D, A, B, C, X[6], 9, T[18]);
-        C = MD5TransformGG(C, D, A, B, X[11], 14, T[19]);
-        B = MD5TransformGG(B, C, D, A, X[0], 20, T[20]);
+        A = MD5TransformGG(A, B, C, D, block[1], 5, T[17]);
+        D = MD5TransformGG(D, A, B, C, block[6], 9, T[18]);
+        C = MD5TransformGG(C, D, A, B, block[11], 14, T[19]);
+        B = MD5TransformGG(B, C, D, A, block[0], 20, T[20]);
 
-        A = MD5TransformGG(A, B, C, D, X[5], 5, T[21]);
-        D = MD5TransformGG(D, A, B, C, X[10],9, T[22]);
-        C = MD5TransformGG(C, D, A, B, X[15], 14, T[23]);
-        B = MD5TransformGG(B, C, D, A, X[4], 20, T[24]);
+        A = MD5TransformGG(A, B, C, D, block[5], 5, T[21]);
+        D = MD5TransformGG(D, A, B, C, block[10],9, T[22]);
+        C = MD5TransformGG(C, D, A, B, block[15], 14, T[23]);
+        B = MD5TransformGG(B, C, D, A, block[4], 20, T[24]);
 
-        A = MD5TransformGG(A, B, C, D, X[9], 5, T[25]);
-        D = MD5TransformGG(D, A, B, C, X[14],9, T[26]);
-        C = MD5TransformGG(C, D, A, B, X[3], 14, T[27]);
-        B = MD5TransformGG(B, C, D, A, X[8], 20, T[28]);
+        A = MD5TransformGG(A, B, C, D, block[9], 5, T[25]);
+        D = MD5TransformGG(D, A, B, C, block[14],9, T[26]);
+        C = MD5TransformGG(C, D, A, B, block[3], 14, T[27]);
+        B = MD5TransformGG(B, C, D, A, block[8], 20, T[28]);
 
-        A = MD5TransformGG(A, B, C, D, X[13], 5, T[29]);
-        D = MD5TransformGG(D, A, B, C, X[2], 9, T[30]);
-        C = MD5TransformGG(C, D, A, B, X[7], 14, T[31]);
-        B = MD5TransformGG(B, C, D, A, X[12], 20, T[32]);
+        A = MD5TransformGG(A, B, C, D, block[13], 5, T[29]);
+        D = MD5TransformGG(D, A, B, C, block[2], 9, T[30]);
+        C = MD5TransformGG(C, D, A, B, block[7], 14, T[31]);
+        B = MD5TransformGG(B, C, D, A, block[12], 20, T[32]);
 
         // Round 3
-        A = MD5TransformHH(A, B, C, D, X[5], 4, T[33]);
-        D = MD5TransformHH(D, A, B, C, X[8], 11, T[34]);
-        C = MD5TransformHH(C, D, A, B, X[11], 16, T[35]);
-        B = MD5TransformHH(B, C, D, A, X[14], 23, T[36]);
+        A = MD5TransformHH(A, B, C, D, block[5], 4, T[33]);
+        D = MD5TransformHH(D, A, B, C, block[8], 11, T[34]);
+        C = MD5TransformHH(C, D, A, B, block[11], 16, T[35]);
+        B = MD5TransformHH(B, C, D, A, block[14], 23, T[36]);
 
-        A = MD5TransformHH(A, B, C, D, X[1], 4, T[37]);
-        D = MD5TransformHH(D, A, B, C, X[4], 11, T[38]);
-        C = MD5TransformHH(C, D, A, B, X[7], 16, T[39]);
-        B = MD5TransformHH(B, C, D, A, X[10], 23, T[40]);
+        A = MD5TransformHH(A, B, C, D, block[1], 4, T[37]);
+        D = MD5TransformHH(D, A, B, C, block[4], 11, T[38]);
+        C = MD5TransformHH(C, D, A, B, block[7], 16, T[39]);
+        B = MD5TransformHH(B, C, D, A, block[10], 23, T[40]);
 
-        A = MD5TransformHH(A, B, C, D, X[13], 4, T[41]);
-        D = MD5TransformHH(D, A, B, C, X[0], 11, T[42]);
-        C = MD5TransformHH(C, D, A, B, X[3], 16, T[43]);
-        B = MD5TransformHH(B, C, D, A, X[6], 23, T[44]);
+        A = MD5TransformHH(A, B, C, D, block[13], 4, T[41]);
+        D = MD5TransformHH(D, A, B, C, block[0], 11, T[42]);
+        C = MD5TransformHH(C, D, A, B, block[3], 16, T[43]);
+        B = MD5TransformHH(B, C, D, A, block[6], 23, T[44]);
 
-        A = MD5TransformHH(A, B, C, D, X[9], 4, T[45]);
-        D = MD5TransformHH(D, A, B, C, X[12], 11, T[46]);
-        C = MD5TransformHH(C, D, A, B, X[15], 16, T[47]);
-        B = MD5TransformHH(B, C, D, A, X[2], 23, T[48]);
+        A = MD5TransformHH(A, B, C, D, block[9], 4, T[45]);
+        D = MD5TransformHH(D, A, B, C, block[12], 11, T[46]);
+        C = MD5TransformHH(C, D, A, B, block[15], 16, T[47]);
+        B = MD5TransformHH(B, C, D, A, block[2], 23, T[48]);
 
         // Round 4
-        A = MD5TransformII(A, B, C, D, X[0], 6, T[49]);
-        D = MD5TransformII(D, A, B, C, X[7], 10, T[50]);
-        C = MD5TransformII(C, D, A, B, X[14], 15, T[51]);
-        B = MD5TransformII(B, C, D, A, X[5], 21, T[52]);
+        A = MD5TransformII(A, B, C, D, block[0], 6, T[49]);
+        D = MD5TransformII(D, A, B, C, block[7], 10, T[50]);
+        C = MD5TransformII(C, D, A, B, block[14], 15, T[51]);
+        B = MD5TransformII(B, C, D, A, block[5], 21, T[52]);
 
-        A = MD5TransformII(A, B, C, D, X[12], 6, T[53]);
-        D = MD5TransformII(D, A, B, C, X[3], 10, T[54]);
-        C = MD5TransformII(C, D, A, B, X[10], 15, T[55]);
-        B = MD5TransformII(B, C, D, A, X[1], 21, T[56]);
+        A = MD5TransformII(A, B, C, D, block[12], 6, T[53]);
+        D = MD5TransformII(D, A, B, C, block[3], 10, T[54]);
+        C = MD5TransformII(C, D, A, B, block[10], 15, T[55]);
+        B = MD5TransformII(B, C, D, A, block[1], 21, T[56]);
 
-        A = MD5TransformII(A, B, C, D, X[8], 6, T[57]);
-        D = MD5TransformII(D, A, B, C, X[15], 10, T[58]);
-        C = MD5TransformII(C, D, A, B, X[6], 15, T[59]);
-        B = MD5TransformII(B, C, D, A, X[13], 21, T[60]);
+        A = MD5TransformII(A, B, C, D, block[8], 6, T[57]);
+        D = MD5TransformII(D, A, B, C, block[15], 10, T[58]);
+        C = MD5TransformII(C, D, A, B, block[6], 15, T[59]);
+        B = MD5TransformII(B, C, D, A, block[13], 21, T[60]);
 
-        A = MD5TransformII(A, B, C, D, X[4], 6, T[61]);
-        D = MD5TransformII(D, A, B, C, X[11], 10, T[62]);
-        C = MD5TransformII(C, D, A, B, X[2], 15, T[63]);
-        B = MD5TransformII(B, C, D, A, X[9], 21, T[64]);
+        A = MD5TransformII(A, B, C, D, block[4], 6, T[61]);
+        D = MD5TransformII(D, A, B, C, block[11], 10, T[62]);
+        C = MD5TransformII(C, D, A, B, block[2], 15, T[63]);
+        B = MD5TransformII(B, C, D, A, block[9], 21, T[64]);
 
         context->State[0] += A;
         context->State[1] += B;
@@ -290,12 +257,18 @@ MD5GetHash(md5_context *context)
         context->State[3] += D;
     }
 
-    // Zero out X[] to prevent sensitive information being left in memory
-    for (int i = 0; i < ArrayCount(X); ++i)
+    // Zero out block[] to prevent sensitive information being left in memory
+    // MemoryZero(&block, ArrayCount(block));
+    for (int i = 0; i < ArrayCount(block); ++i)
     {
-        X[i] = 0;
+        block[i] = 0;
     }
+}
 
+
+internal void
+MD5CalculateDigest(md5_context *context)
+{
     // Extract digest values, convert to string, and store in context
     unsigned int i, j;
     for (i = 0, j = 0; i < 4; ++i, j+=4)
@@ -311,29 +284,72 @@ MD5GetHash(md5_context *context)
 
 
 internal md5_context
-MD5HashString(char *messagePtr)
+MD5HashString(unsigned char *messagePtr)
 {
     md5_context result = {};
+    int byteCounter = 0;
 
-    result.MessageLengthBits = GetStringLengthBits(messagePtr);
-
-    // Get the padded size of the message
-    result.PaddingLengthBits = MD5GetPaddingLengthBits(result.MessageLengthBits);
-    result.TotalLengthBits = result.MessageLengthBits + result.PaddingLengthBits + 64;
-    Assert(result.TotalLengthBits % 512 == 0);
-
-    // Allocate memory for the padded message
-    result.MessagePtr = (uint8 *)malloc(result.TotalLengthBits / 8);
-    if (result.MessagePtr == 0)
+    while (*messagePtr != 0x00)
     {
-        printf("Error: Unable to allocate memory for message");
-        exit(2);
+        messagePtr++;
+        result.MessageLengthBits += 8;
+        byteCounter++;
+
+        if(byteCounter == 64)
+        {
+            MD5UpdateHash(&result, messagePtr - byteCounter, byteCounter);
+            byteCounter = 0;
+        }
     }
 
-    // Copy the message into the allocated memory
-    MemoryCopy((uint8 *)messagePtr, (uint8 *)result.MessagePtr, (result.MessageLengthBits / 8));
+    // Allocate memory to store the message remainder + padding + encoded message length
+    uint8 *messageRemainterPtr;
+    bool useExtendedMargine = byteCounter >= 56;
 
-    MD5GetHash(&result);
+    if (!useExtendedMargine)
+    {
+        // Message remainder fits inside the 448 bit margine
+        messageRemainterPtr = (uint8 *)malloc(64);
+    }
+    else
+    {
+        // Message remainder exceeds the 448 bit margine so we apply extra padding to wrap us back to 448
+        messageRemainterPtr = (uint8 *)malloc(128);
+    }
+
+    // Copy message remainder into the allocated memory
+    MemoryCopy(messagePtr - byteCounter, messageRemainterPtr, byteCounter);
+
+    // Apply padded 1
+    uint8 *paddingPtr = messageRemainterPtr + byteCounter;
+    *paddingPtr = (1 << 7);
+    paddingPtr++;
+
+    // Apply padded 0s
+    uint8 *paddingEndPtr = useExtendedMargine
+        ? messageRemainterPtr + 120
+        : messageRemainterPtr + 56;
+
+    while (paddingPtr < paddingEndPtr)
+    {
+        *paddingPtr = 0;
+        paddingPtr++;
+    }
+
+    // Append the length of the message as a 64-bit representation
+    uint64 *sizePtr = (uint64 *)paddingPtr;
+    *sizePtr = (uint64)result.MessageLengthBits;
+
+    // Perform final hash update
+    byteCounter = useExtendedMargine ? 128 : 64;
+    Assert(byteCounter == (paddingPtr - messageRemainterPtr) + sizeof(uint64));
+    MD5UpdateHash(&result, messageRemainterPtr, byteCounter);
+
+    // Zero out message remainder to prevent sensitive information being left in memory
+    MemoryZero(messageRemainterPtr, byteCounter);
+
+    // Calculate hash and return
+    MD5CalculateDigest(&result);
 
     return result;
 }

@@ -21,7 +21,7 @@ int main(int argc, char const *argv[])
         returnCode = 1;
     }
 
-    char *messagePtr = (char *)argv[1];
+    unsigned char *messagePtr = (unsigned char *)argv[1];
 
 
     md5_context result = MD5HashString(messagePtr);
