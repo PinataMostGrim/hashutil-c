@@ -346,5 +346,91 @@ MD5HashString(char *messagePtr)
     return result;
 }
 
+
+internal md5_context
+MD5HashFile(const char *fileName)
+{
+    // Note (Aaron): Read file in 64 byte chunks as this is the size of blocks MD5 processes at once.
+    const uint32 CHUNK_BYTE_COUNT = 64;
+    // Note (Aaron): Read file in 64 byte chunks but allocate 128 characters in case
+    // we need an extended margine when padding the end of the message.
+    const uint32 BUFFER_BYTE_SIZE = 128;
+
+    uint8 buffer[BUFFER_BYTE_SIZE] = {};
+    FILE *file;
+    errno_t error;
+    size_t bytesRead;
+
+    error = fopen_s(&file, fileName, "rb");
+    if(!file)
+    {
+        printf("Unable to open file '%s'", fileName);
+        exit(EXIT_FAILURE);
+    }
+
+    // Note (Aaron): Read from file in blocks of 64 bytes
+    md5_context result = {};
+    uint8 *bufferPtr = buffer;
+    size_t readElementSize = 1;
+    size_t readBlockSize = sizeof(uint8) * CHUNK_BYTE_COUNT;
+
+    while((bytesRead = fread(buffer, readElementSize, readBlockSize, file)))
+    {
+        Assert(bytesRead <= CHUNK_BYTE_COUNT);
+        result.MessageLengthBits += ((uint32)bytesRead * 8);
+
+        if (bytesRead == CHUNK_BYTE_COUNT)
+        {
+            MD5UpdateHash(&result, bufferPtr, (uint32)bytesRead);
+            continue;
+        }
+
+        // Note (Aaron): Apply the final hash update with padding inside the loop because 'bytesRead' will be 0 after the loop is exited
+        bool useExtendedMargine = (bytesRead >= (CHUNK_BYTE_COUNT - 8));
+
+        // Apply padded 1
+        uint8 *paddingPtr = bufferPtr + bytesRead;
+        *paddingPtr = (1 << 7);
+        paddingPtr++;
+
+        // Apply padded 0s
+        uint8 *paddingEndPtr = useExtendedMargine
+            ? bufferPtr + BUFFER_BYTE_SIZE - 8
+            : bufferPtr + CHUNK_BYTE_COUNT - 8;
+
+        while (paddingPtr < paddingEndPtr)
+        {
+            *paddingPtr = 0;
+            paddingPtr++;
+        }
+
+        // Append the length of the message as a 64-bit representation
+        uint64 *sizePtr = (uint64 *)paddingPtr;
+        *sizePtr = (uint64)result.MessageLengthBits;
+
+        // Perform final hash update
+        uint32 byteCount = useExtendedMargine ? BUFFER_BYTE_SIZE : CHUNK_BYTE_COUNT;
+        Assert(byteCount == (paddingPtr - bufferPtr) + sizeof(uint64));
+        MD5UpdateHash(&result, bufferPtr, byteCount);
+
+        // Zero out buffer to prevent santize potentially sensitive information
+        MemoryZero(bufferPtr, byteCount);
+    }
+
+    if(ferror(file))
+    {
+        printf("Error reading file '%s'", fileName);
+        fclose(file);
+        exit(EXIT_FAILURE);
+    }
+
+    fclose(file);
+
+    // Calculate hash and return
+    MD5CalculateDigest(&result);
+
+    return result;
+}
+
 #define MD5_H
 #endif
