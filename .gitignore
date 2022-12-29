@@ -2,6 +2,7 @@ bin/
 
 # clangd
 compile_commands.json
+.cache/
 
 # sublime text
 *.sublime-workspace
