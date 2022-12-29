@@ -30,6 +30,17 @@
                 },
             ],
         },
+        {
+            // Requires "vcvarsall.bat" be accessible via PATH
+            "name": "Test hashutil",
+            "shell_cmd": "call vcvarsall.bat x64 && build-test-hashutil.bat && bin\\test-hashutil",
+            "working_dir": "${project_path}",
+            "env":
+            {
+                "DEBUG": "0"
+            },
+            "quiet": true,
+        },
     ],
     "settings":
     {
