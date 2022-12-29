@@ -10,23 +10,23 @@
     [
         {
             // Requires "vcvarsall.bat" be accessible via PATH
-            "name": "hashutil",
-            "shell_cmd": "call vcvarsall.bat x64 && mkdir \"$folder\\%BuildFolder%\" & cd \"$folder\\%BuildFolder%\" && cl %CommonCompilerFlags% -DHASHUTIL_SLOW=0 \"$folder\\src\\hashutil.cpp\" /link %CommonLinkerFlags%",
-            "working_dir": "${file_path:${folder}}",
+            "name": "Build hashutil x64",
+            "shell_cmd": "call vcvarsall.bat x64 && build-hashutil.bat",
+            "working_dir": "${project_path}",
             "env":
             {
-                "BuildFolder": "bin",
-                "CommonCompilerFlags": "-nologo -Od -Gm- -MT -GR- -EHa- -Oi -W4 -FC",
-                "CommonLinkerFlags": "-opt:ref",
+                "DEBUG": "0"
             },
-            "selector": "source.c, source.c++",
             "file_regex": "^(..[^(]*)\\(([0-9]+)\\):():? (.*)$",
             "quiet": true,
             "variants" :
             [
                 {
-                    "name": "x64 debug",
-                    "shell_cmd": "call vcvarsall.bat x64 && mkdir \"$folder\\%BuildFolder%\" & cd \"$folder\\%BuildFolder%\" && cl %CommonCompilerFlags% -DHASHUTIL_SLOW=1 -Zi -DEBUG:FULL \"$folder\\src\\hashutil.cpp\" /link %CommonLinkerFlags%",
+                    "name": "Debug",
+                    "env":
+                    {
+                        "DEBUG": "1"
+                    },
                 },
             ],
         },
