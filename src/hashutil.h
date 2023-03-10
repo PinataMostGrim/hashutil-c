@@ -17,6 +17,9 @@ typedef uint32_t uint32;
 typedef uint64_t uint64;
 
 #if HASHUTIL_SLOW
+
+#pragma warning(disable:4996)   //_CRT_SECURE_NO_WARNINGS
+
 #define Assert(Expression) if (!(Expression)) {*(int *)0 = 0;}
 #else
 #define Assert(Expression)
