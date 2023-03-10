@@ -43,4 +43,5 @@ MemoryZero(uint8 *ptr, size_t count)
     }
 }
 
+#define HASHUTIL_H
 #endif
