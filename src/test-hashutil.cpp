@@ -2,6 +2,7 @@
 
 #include "hashutil.h"
 #include "md5.h"
+#include "sha1.h"
 
 
 internal void
@@ -22,6 +23,7 @@ EvaluateResult(char *messagePtr, char *targetDigest, char *digestStr)
 int main()
 {
     // Note (Aaron): MD5 Tests
+#if 1
     {
         md5_context result = {};
         char *messagePtr = (char *)"";
@@ -69,6 +71,20 @@ int main()
         result = MD5HashFile(fileNamePtr);
         EvaluateResult(fileNamePtr, targetDigest, result.DigestStr);
     }
+#endif
+
+    // Note (Aaron): SHA1 Tests
+#if 1
+    {
+        sha1_context result = {};
+        char *messagePtr = (char *)"";
+        char *targetDigest = {};
+
+        messagePtr = (char *)"abcde";
+        targetDigest = (char *)"34aa973cd4c4daa4f61eeb2bdbad27316534016f";
+        result = SHA1HashString(messagePtr);
+    }
+#endif
 
     return 0;
 }
