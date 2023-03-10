@@ -243,7 +243,7 @@ MD5CalculateDigest(md5_context *context)
         context->Digest[j+2] = (uint8)((context->State[i] >> 16) & 0xff);
         context->Digest[j+3] = (uint8)((context->State[i] >> 24) & 0xff);
 
-        sprintf_s(context->DigestStr + (j*2), 9,"%02x%02x%02x%02x", context->Digest[j], context->Digest[j+1], context->Digest[j+2], context->Digest[i*4+3]);
+        sprintf(context->DigestStr + (j*2),"%02x%02x%02x%02x", context->Digest[j], context->Digest[j+1], context->Digest[j+2], context->Digest[i*4+3]);
     }
 }
 
@@ -326,12 +326,10 @@ MD5HashFile(const char *fileName)
     const uint32 BUFFER_BYTE_SIZE = 128;
 
     uint8 buffer[BUFFER_BYTE_SIZE] = {};
-    FILE *file;
-    errno_t error;
     size_t bytesRead;
     uint32 byteCount = 0;
 
-    error = fopen_s(&file, fileName, "rb");
+    FILE *file = fopen(fileName, "rb");
     if(!file)
     {
         printf("Unable to open file '%s'", fileName);
