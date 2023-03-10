@@ -61,12 +61,12 @@ int main()
         result = MD5HashString(messagePtr);
         EvaluateResult(messagePtr, targetDigest, result.DigestStr);
 
-        char *fileNamePtr = (char *)"etc\\test.txt";
+        char *fileNamePtr = (char *)"etc/test.txt";
         targetDigest = (char *)"05831eb88a34bfe953de0afc2b43f46d";
         result = MD5HashFile(fileNamePtr);
         EvaluateResult(fileNamePtr, targetDigest, result.DigestStr);
 
-        fileNamePtr = (char *)"etc\\test2.txt";
+        fileNamePtr = (char *)"etc/test2.txt";
         targetDigest = (char *)"d41d8cd98f00b204e9800998ecf8427e";
         result = MD5HashFile(fileNamePtr);
         EvaluateResult(fileNamePtr, targetDigest, result.DigestStr);
