@@ -23,7 +23,7 @@ int main(int argc, char const *argv[])
         }
 
         if (processOptionalArgs
-         && ((strncmp(argv[i], "-f", 2) == 0) || (strncmp(argv[i], "--file", 6) == 0)))
+            && ((strncmp(argv[i], "-f", 2) == 0) || (strncmp(argv[i], "--file", 6) == 0)))
         {
             fileFlag = true;
             continue;
