@@ -39,7 +39,18 @@
             {
                 "DEBUG": "0"
             },
+            "file_regex": "^(..[^(\n]*)\\(([0-9]+)\\):():? (.*)$",
             "quiet": true,
+            "variants" :
+            [
+                {
+                    "name": "Debug",
+                    "env":
+                    {
+                        "DEBUG": "1"
+                    },
+                },
+            ],
         },
     ],
     "settings":
