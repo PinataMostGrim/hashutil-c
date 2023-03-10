@@ -19,6 +19,7 @@ typedef uint64_t uint64;
 #if HASHUTIL_SLOW
 
 #pragma warning(disable:4996)   //_CRT_SECURE_NO_WARNINGS
+#pragma clang diagnostic ignored "-Wnull-dereference"
 
 #define Assert(Expression) if (!(Expression)) {*(int *)0 = 0;}
 #else
