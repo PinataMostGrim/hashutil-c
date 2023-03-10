@@ -24,4 +24,23 @@ typedef uint64_t uint64;
 
 #define ArrayCount(Array) (sizeof(Array) / sizeof((Array)[0]))
 
+// Note (Aaron): This is a naive implementation
+internal void
+MemoryCopy(const uint8 *source, uint8 *destination, size_t count)
+{
+    for (int i = 0; i < count; ++i)
+    {
+        *(destination + i) = *(source + i);
+    }
+}
+
+internal void
+MemoryZero(uint8 *ptr, size_t count)
+{
+    for (int i = 0; i < count; ++i)
+    {
+        *(ptr + i) = 0;
+    }
+}
+
 #endif

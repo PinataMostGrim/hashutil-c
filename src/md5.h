@@ -15,28 +15,6 @@ struct md5_context
 };
 
 
-// Note (Aaron): This is a naive implementation
-internal void
-MemoryCopy(const uint8 *source, uint8 *destination, size_t count)
-{
-    for (int i = 0; i < count; ++i)
-    {
-        *(destination + i) = *(source + i);
-    }
-}
-
-
-internal void
-MemoryZero(uint8 *ptr, size_t count)
-{
-    for (int i = 0; i < count; ++i)
-    {
-        *(ptr + i) = 0;
-    }
-}
-
-
-
 // #define MD5AuxF(X, Y, Z) (((X) & (Y)) | ((~X) & (Z)))
 internal uint32
 MD5AuxF(uint32 x, uint32 y, uint32 z)
@@ -126,14 +104,13 @@ MD5TransformII(uint32 A, uint32 B, uint32 C, uint32 D, uint32 X, int S, uint32 T
 internal void
 MD5UpdateHash(md5_context *context, uint8 *ptr, uint32 byteLength)
 {
-    // Assert that the block length is divisible by 64 bytes
+    // Assert that the block length is divisible by 512 bits (64 bytes)
     Assert(byteLength % 64 == 0);
 
+    // Create 512-bit block
     uint32 block[16] = {};
 
-    // Generate sin table T
-
-    // Note (Aaron): Iterate over 64 byte blocks of the message.
+    // Note (Aaron): Iterate over 512-bit (64 byte) blocks of the message.
     // 'i' represents the byte position in the message.
     for (uint32 i = 0;
          i < (byteLength);
@@ -294,6 +271,8 @@ MD5HashString(char *messagePtr)
     }
 
     // Allocate memory to store the message remainder + padding + encoded message length
+    // We use a buffer length of 1024 bits to cover the worst case scenario,
+    // where the length of the message remainder is between 477 and 512 bits.
     uint8 buffer[BUFFER_BYTE_SIZE] = {};
     uint8 *bufferPtr = buffer;
     bool useExtendedMargine = (byteCount >= (CHUNK_BYTE_COUNT - 8));
