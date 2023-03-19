@@ -1,11 +1,13 @@
 #if !defined(SHA1_H)
 #include <stdio.h>
 #include <stdlib.h>
+
 #include "hashutil.h"
 
 #if HASHUTIL_SLOW
 #include <string.h>
 #endif
+
 
 struct sha1_context
 {
@@ -179,9 +181,11 @@ SHA1HashString(char *messagePtr)
 
     while(*messagePtr != 0x00)
     {
+        Assert(byteCount <= BLOCK_SIZE_BYTES);
+
         messagePtr++;
-        result.MessageLengthBits += 8;
         byteCount++;
+        result.MessageLengthBits += 8;
 
         // Process the message in blocks of 512 bits (64 bytes or sixteen 32-bit words)
         if(byteCount == BLOCK_SIZE_BYTES)
@@ -203,12 +207,14 @@ SHA1HashString(char *messagePtr)
     memset(bufferPtr, 0xff, BUFFER_SIZE_BYTES);
 #endif
 
-    // The last 8 bytes are reserved to store the message length as a 64-bit integer
-    bool useExtendedBuffer = (byteCount >= (BLOCK_SIZE_BYTES - 8));
+    // Apply the final hash update with padding
+    // 8 bytes are reserved to store the message length as a 64-bit integer and 1 byte
+    // holds the mandatory padding
+    bool useExtendedBuffer = (byteCount > (BLOCK_SIZE_BYTES - 8 - 1));
 
     // Assert message remainder is small enough to fit into the buffer along with
     // padding and message length.
-    Assert(byteCount < (BUFFER_SIZE_BYTES - 64 - 1));
+    Assert(byteCount < ((useExtendedBuffer ? BUFFER_SIZE_BYTES : BLOCK_SIZE_BYTES) - 8 - 1));
 
     // Copy message remainder into the buffer
     MemoryCopy((uint8 *)(messagePtr - byteCount), bufferPtr, byteCount);
@@ -316,7 +322,9 @@ SHA1HashFile(const char *fileName)
     fclose(file);
 
     // Apply the final hash update with padding
-    bool useExtendedBuffer = (byteCount >= (BLOCK_SIZE_BYTES - 8 - 1));
+    // 8 bytes are reserved to store the message length as a 64-bit integer and 1 byte
+    // holds the mandatory padding
+    bool useExtendedBuffer = (byteCount > (BLOCK_SIZE_BYTES - 8 - 1));
 
     // Assert message remainder is small enough to fit into the buffer along with
     // padding and message length.
