@@ -25,6 +25,8 @@ int main()
     // Note (Aaron): MD5 Tests
 #if 1
     {
+        printf("MD5 hash tests:\n");
+
         md5_context result = {};
         char *messagePtr = (char *)"";
         char *targetDigest = {};
@@ -70,19 +72,51 @@ int main()
         targetDigest = (char *)"d41d8cd98f00b204e9800998ecf8427e";
         result = MD5HashFile(fileNamePtr);
         EvaluateResult(fileNamePtr, targetDigest, result.DigestStr);
+
+        printf("\n");
     }
 #endif
 
     // Note (Aaron): SHA1 Tests
 #if 1
     {
+        printf("SHA1 hash tests:\n");
+
         sha1_context result = {};
         char *messagePtr = (char *)"";
         char *targetDigest = {};
 
-        messagePtr = (char *)"abcde";
-        targetDigest = (char *)"34aa973cd4c4daa4f61eeb2bdbad27316534016f";
+        messagePtr = (char *)"a";
+        targetDigest = (char *)"86f7e437faa5a7fce15d1ddcb9eaeaea377667b8";
         result = SHA1HashString(messagePtr);
+        EvaluateResult(messagePtr, targetDigest, result.DigestStr);
+
+        messagePtr = (char *)"abc";
+        targetDigest = (char *)"a9993e364706816aba3e25717850c26c9cd0d89d";
+        result = SHA1HashString(messagePtr);
+        EvaluateResult(messagePtr, targetDigest, result.DigestStr);
+
+        messagePtr = (char *)"abcde";
+        targetDigest = (char *)"03de6c570bfe24bfc328ccd7ca46b76eadaf4334";
+        result = SHA1HashString(messagePtr);
+        EvaluateResult(messagePtr, targetDigest, result.DigestStr);
+
+        messagePtr = (char *)"abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq";
+        targetDigest = (char *)"84983e441c3bd26ebaae4aa1f95129e5e54670f1";
+        result = SHA1HashString(messagePtr);
+        EvaluateResult(messagePtr, targetDigest, result.DigestStr);
+
+        messagePtr = (char *)"0123456701234567012345670123456701234567012345670123456701234567";
+        targetDigest = (char *)"e0c094e867ef46c350ef54a7f59dd60bed92ae83";
+        result = SHA1HashString(messagePtr);
+        EvaluateResult(messagePtr, targetDigest, result.DigestStr);
+
+        messagePtr = (char *)"The quick brown fox jumps over the lazy dog over and over and over and over and over and over and over and over and over again";
+        targetDigest = (char *)"b1d31797695eb0c2e369dd4149a80cbb58ba48e0";
+        result = SHA1HashString(messagePtr);
+        EvaluateResult(messagePtr, targetDigest, result.DigestStr);
+
+        printf("\n");
     }
 #endif
 
