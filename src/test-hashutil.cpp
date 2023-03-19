@@ -116,6 +116,16 @@ int main()
         result = SHA1HashString(messagePtr);
         EvaluateResult(messagePtr, targetDigest, result.DigestStr);
 
+        char *fileNamePtr = (char *)"etc/test.txt";
+        targetDigest = (char *)"3c5a24b30b738ec655e7c1aff04743285f07d690";
+        result = SHA1HashFile(fileNamePtr);
+        EvaluateResult(fileNamePtr, targetDigest, result.DigestStr);
+
+        fileNamePtr = (char *)"etc/test2.txt";
+        targetDigest = (char *)"da39a3ee5e6b4b0d3255bfef95601890afd80709";
+        result = SHA1HashFile(fileNamePtr);
+        EvaluateResult(fileNamePtr, targetDigest, result.DigestStr);
+
         printf("\n");
     }
 #endif
