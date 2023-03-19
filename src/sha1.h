@@ -1,5 +1,6 @@
 #if !defined(SHA1_H)
 #include <stdio.h>
+#include <stdlib.h>
 #include "hashutil.h"
 
 #if HASHUTIL_SLOW
@@ -8,7 +9,7 @@
 
 struct sha1_context
 {
-    uint32 MessageLengthBits = 0;
+    uint64 MessageLengthBits = 0;
     union
     {
         uint32 H[5] = {0x67452301, 0xefcdab89, 0x98badcfe, 0x10325476, 0xc3d2e1f0};
@@ -30,6 +31,7 @@ SHA1CircularLeftShift(uint32 value, uint8 shift)
 {
     return (value << shift) | (value >> (32-shift));
 }
+
 
 internal void
 SHA1UpdateHash(sha1_context *context, uint8 *messagePtr, uint64 byteCount)
@@ -152,6 +154,7 @@ SHA1UpdateHash(sha1_context *context, uint8 *messagePtr, uint64 byteCount)
     }
 }
 
+
 internal void
 SHA1ConstructDigest(sha1_context *context)
 {
@@ -229,7 +232,7 @@ SHA1HashString(char *messagePtr)
 
     // Append length of message as a 64-bit number (in big endian)
     uint64 *sizePtr = (uint64 *)paddingPtr;
-    uint64 messageLength64 = (uint64)result.MessageLengthBits;
+    uint64 messageLength64 = result.MessageLengthBits;
 
     uint32 endianTest = 0xdeadbeef;
     bool isLittleEndian = *(unsigned char *)&endianTest;
@@ -249,10 +252,117 @@ SHA1HashString(char *messagePtr)
 
     *sizePtr = messageLength64;
 
-    // Apply final hash update
+    // Apply final hash update and construct the digest
     byteCount = useExtendedBuffer ? BUFFER_SIZE_BYTES : BLOCK_SIZE_BYTES;
     SHA1UpdateHash(&result, bufferPtr, byteCount);
+    SHA1ConstructDigest(&result);
 
+    return result;
+}
+
+
+internal sha1_context
+SHA1HashFile(const char *fileName)
+{
+    const uint32 BLOCK_SIZE_BYTES = 64;     // 512 bits
+    const uint32 BUFFER_SIZE_BYTES = 128;    // 1024 bits
+
+    uint8 buffer[BUFFER_SIZE_BYTES] = {};
+    uint8 *bufferPtr = buffer;
+    size_t bytesRead;
+    uint64 byteCount = 0;
+
+    FILE *file = fopen(fileName, "rb");
+    if(!file)
+    {
+        printf("Unable to open file '%s'", fileName);
+        exit(1);
+    }
+
+    sha1_context result = {};
+    size_t readElementSize = 1;
+    size_t readBlockSize = sizeof(uint8) * BLOCK_SIZE_BYTES;
+
+    // Update hash using file contents until we run out of blocks of sufficient size
+    bytesRead = fread(buffer, readElementSize, readBlockSize, file);
+    while(bytesRead)
+    {
+        Assert(bytesRead <= BLOCK_SIZE_BYTES);
+
+        result.MessageLengthBits += (bytesRead * 8);
+        // Note (Aaron): Hashes are updated using 'byteCount' rather that 'bytesRead' as
+        // 'bytesRead' will be 0 after exiting the loop.
+        byteCount = (uint64)bytesRead;
+
+        if(byteCount == BLOCK_SIZE_BYTES)
+        {
+            SHA1UpdateHash(&result, bufferPtr, byteCount);
+            bytesRead = fread(buffer, readElementSize, readBlockSize, file);
+            continue;
+        }
+
+        // Note (Aaron): If we ever read less bytes than BLOCK_SIZE_BYTES, it is time to stop
+        // reading the file.
+        bytesRead = 0;
+    }
+
+    if(ferror(file))
+    {
+        printf("Error reading file '%s'", fileName);
+        fclose(file);
+        exit(1);
+    }
+
+    fclose(file);
+
+    // Apply the final hash update with padding
+    bool useExtendedBuffer = (byteCount >= (BLOCK_SIZE_BYTES - 8 - 1));
+
+    // Assert message remainder is small enough to fit into the buffer along with
+    // padding and message length.
+    Assert(byteCount < (BUFFER_SIZE_BYTES - 8 - 1));
+
+    // Apply padded 1
+    uint8 *paddingPtr = bufferPtr + byteCount;
+    *paddingPtr = (1 << 7);
+    paddingPtr++;
+
+    // Apply padded 0s
+    uint8 *paddingEndPtr = useExtendedBuffer
+        ? bufferPtr + (BUFFER_SIZE_BYTES - 8)
+        : buffer + (BLOCK_SIZE_BYTES - 8);
+
+    while (paddingPtr < paddingEndPtr)
+    {
+        *paddingPtr = 0;
+        paddingPtr++;
+    }
+
+    // Append length of message as a 64-bit number (in big endian)
+    uint64 *sizePtr = (uint64 *)paddingPtr;
+    uint64 messageLength64 = result.MessageLengthBits;
+
+    uint32 endianTest = 0xdeadbeef;
+    bool isLittleEndian = *(unsigned char *)&endianTest;
+    if (isLittleEndian)
+    {
+        // Convert bits to big endian
+        messageLength64 =
+            ((messageLength64 >> 56) & 0xff)
+            | ((messageLength64 >> 40) & 0xff00)
+            | ((messageLength64 >> 24) & 0xff0000)
+            | ((messageLength64 >> 8) & 0xff000000)
+            | ((messageLength64 << 8) & 0xff00000000)
+            | ((messageLength64 << 24) & 0xff0000000000)
+            | ((messageLength64 << 40) & 0xff000000000000)
+            | ((messageLength64 << 56) & 0xff00000000000000);
+    }
+
+    *sizePtr = messageLength64;
+
+    // Apply final hash update and construct the digest
+    byteCount = useExtendedBuffer ? BUFFER_SIZE_BYTES : BLOCK_SIZE_BYTES;
+    SHA1UpdateHash(&result, bufferPtr, byteCount);
     SHA1ConstructDigest(&result);
 
     return result;
