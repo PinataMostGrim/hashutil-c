@@ -111,6 +111,12 @@ int main()
         result = SHA1HashString(messagePtr);
         EvaluateResult(messagePtr, targetDigest, result.DigestStr);
 
+        // Message with a length of exactly 448 bits
+        messagePtr = (char *)"The quick brown fox jumps over the lazy dog over and ove";
+        targetDigest = (char *)"51c6df96407f4c6b257f5767247ac6b3ad71d773";
+        result = SHA1HashString(messagePtr);
+        EvaluateResult(messagePtr, targetDigest, result.DigestStr);
+
         messagePtr = (char *)"The quick brown fox jumps over the lazy dog over and over and over and over and over and over and over and over and over again";
         targetDigest = (char *)"b1d31797695eb0c2e369dd4149a80cbb58ba48e0";
         result = SHA1HashString(messagePtr);
