@@ -5,10 +5,10 @@
 :: NOTE: Set %DEBUG% to 1 for debug build
 IF [%DEBUG%] == [1] (
     :: Making debug build
-    set CompilerFlags=-nologo -Od -Gm- -MT -GR- -EHa- -Oi -W4 -FC -wd4505 -DHASHUTIL_SLOW=1 -Zi -DEBUG:FULL
+    set CompilerFlags=-nologo -Od -Gm- -MT -GR- -EHa- -Oi -W4 -FC -wd4505 -wd4068 -wd4996 -wd4201 -DHASHUTIL_SLOW=1 -Zi -DEBUG:FULL
 ) ELSE (
     :: Making release build
-    set CompilerFlags=-nologo -Od -Gm- -MT -GR- -EHa- -Oi -W4 -FC -wd4505
+    set CompilerFlags=-nologo -Od -Gm- -MT -GR- -EHa- -Oi -W4 -FC -wd4505 -wd4068 -wd4996 -wd4201
 )
 
 set BuildFolder=bin
