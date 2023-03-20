@@ -328,7 +328,7 @@ MD5HashFile(const char *fileName)
     if(!file)
     {
         printf("Unable to open file '%s'", fileName);
-        exit(EXIT_FAILURE);
+        exit(1);
     }
 
     md5_context result = {};
@@ -362,7 +362,7 @@ MD5HashFile(const char *fileName)
     {
         printf("Error reading file '%s'", fileName);
         fclose(file);
-        exit(EXIT_FAILURE);
+        exit(1);
     }
 
     fclose(file);
