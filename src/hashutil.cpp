@@ -27,6 +27,7 @@ int main(int argc, char const *argv[])
     // Process command line arguments
     bool processOptionalArgs = true;
     bool usageFlag = false;
+    bool listFlag = false;
     bool fileFlag = false;
     bool algorithmConsumed = false;
     char *algorithmPtr = (char *)"";
@@ -38,6 +39,12 @@ int main(int argc, char const *argv[])
         if ((strncmp(argv[i], "-h", 2) == 0) || (strncmp(argv[i], "--help", 6) == 0))
         {
             usageFlag = true;
+            break;
+        }
+
+        if ((strncmp(argv[i], "-l", 2) == 0) || (strncmp(argv[i], "--help", 6) == 0))
+        {
+            listFlag = true;
             break;
         }
 
@@ -72,6 +79,13 @@ int main(int argc, char const *argv[])
     if (usageFlag)
     {
         PrintUsage();
+        return 0;
+    }
+
+    if (listFlag)
+    {
+        printf("Algorithms supported:\n");
+        printf("  md5 sha1\n\n");
         return 0;
     }
 
