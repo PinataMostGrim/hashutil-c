@@ -13,7 +13,7 @@ fi
 if [ $DEBUG = "1" ]
 then
     # Making debug build
-    CompilerFlags="-g -DHASHUTIL_SLOW=1"
+    CompilerFlags="-g -DHASHUTIL_SLOW=1 -Wno-null-dereference"
 else
     # Making release build
     CompilerFlags="-DHASHUTIL_SLOW=0"

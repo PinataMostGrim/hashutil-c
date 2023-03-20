@@ -18,8 +18,6 @@ typedef uint64_t uint64;
 
 #if HASHUTIL_SLOW
 
-#pragma clang diagnostic ignored "-Wnull-dereference"
-
 #define Assert(Expression) if (!(Expression)) {*(int *)0 = 0;}
 #else
 #define Assert(Expression)
