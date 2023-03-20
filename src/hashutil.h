@@ -44,5 +44,11 @@ MemoryZero(uint8 *ptr, size_t count)
     }
 }
 
+internal uint32
+CircularBitShiftLeft(uint32 value, uint8 count)
+{
+    return (value << count) | (value >> (32-count));
+}
+
 #define HASHUTIL_H
 #endif

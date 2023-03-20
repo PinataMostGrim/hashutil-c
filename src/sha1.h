@@ -28,12 +28,6 @@ struct sha1_context
     char DigestStr[41];
 };
 
-internal uint32
-SHA1CircularLeftShift(uint32 value, uint8 shift)
-{
-    return (value << shift) | (value >> (32-shift));
-}
-
 
 internal void
 SHA1UpdateHash(sha1_context *context, uint8 *messagePtr, uint64 byteCount)
@@ -65,7 +59,7 @@ SHA1UpdateHash(sha1_context *context, uint8 *messagePtr, uint64 byteCount)
         for (int t = 16; t < 80; ++t)
         {
             //  W(t) = S^1(W(t-3) XOR W(t-8) XOR W(t-14) XOR W(t-16))
-            W[t] = SHA1CircularLeftShift(
+            W[t] = CircularBitShiftLeft(
                 (W[t - 3] ^ W[t - 8] ^ W[t - 14] ^ W[t - 16]),
                 1);
         }
@@ -84,14 +78,14 @@ SHA1UpdateHash(sha1_context *context, uint8 *messagePtr, uint64 byteCount)
         {
             // f(t;B,C,D) = (B AND C) OR ((NOT B) AND D)         ( 0 <= t <= 19)
             // K(t) = 5A827999         ( 0 <= t <= 19)
-            temp = SHA1CircularLeftShift(A, 5);
+            temp = CircularBitShiftLeft(A, 5);
             temp += ((B & C) | ((~B) & D))
                 + E
                 + W[t]
                 + 0x5a827999;
             E = D;
             D = C;
-            C = SHA1CircularLeftShift(B, 30);
+            C = CircularBitShiftLeft(B, 30);
             B = A;
             A = temp;
         }
@@ -100,14 +94,14 @@ SHA1UpdateHash(sha1_context *context, uint8 *messagePtr, uint64 byteCount)
         {
             // f(t;B,C,D) = B XOR C XOR D                        (20 <= t <= 39)
             // K(t) = 6ED9EBA1         (20 <= t <= 39)
-            temp = SHA1CircularLeftShift(A, 5);
+            temp = CircularBitShiftLeft(A, 5);
             temp += (B ^ C ^ D)
                 + E
                 + W[t]
                 + 0x6ed9eba1;
             E = D;
             D = C;
-            C = SHA1CircularLeftShift(B, 30);
+            C = CircularBitShiftLeft(B, 30);
             B = A;
             A = temp;
         }
@@ -116,7 +110,7 @@ SHA1UpdateHash(sha1_context *context, uint8 *messagePtr, uint64 byteCount)
         {
             // f(t;B,C,D) = (B AND C) OR (B AND D) OR (C AND D)  (40 <= t <= 59)
             // K(t) = 8F1BBCDC         (40 <= t <= 59)
-            temp = SHA1CircularLeftShift(A, 5);
+            temp = CircularBitShiftLeft(A, 5);
             temp += ((B & C) | (B & D) | (C & D))
                 + E
                 + W[t]
@@ -124,14 +118,14 @@ SHA1UpdateHash(sha1_context *context, uint8 *messagePtr, uint64 byteCount)
 
             E = D;
             D = C;
-            C = SHA1CircularLeftShift(B, 30);
+            C = CircularBitShiftLeft(B, 30);
             B = A;
             A = temp;
         }
 
         for (int t = 60; t < 80; ++t)
         {
-            temp = SHA1CircularLeftShift(A, 5);
+            temp = CircularBitShiftLeft(A, 5);
             // f(t;B,C,D) = B XOR C XOR D                        (60 <= t <= 79)
             // K(t) = CA62C1D6         (60 <= t <= 79).
             temp += (B ^ C ^ D)
@@ -141,7 +135,7 @@ SHA1UpdateHash(sha1_context *context, uint8 *messagePtr, uint64 byteCount)
 
             E = D;
             D = C;
-            C = SHA1CircularLeftShift(B, 30);
+            C = CircularBitShiftLeft(B, 30);
             B = A;
             A = temp;
         }

@@ -56,51 +56,46 @@ MD5AuxI(uint32 x, uint32 y, uint32 z)
 
 
 internal uint32
-MD5RotateLeft(uint32 x, int s)
-{
-    return (x << s) | (x >> (32-s));
-}
-
-internal uint32
-MD5TransformFF(uint32 A, uint32 B, uint32 C, uint32 D, uint32 X, int S, uint32 T)
+MD5TransformFF(uint32 A, uint32 B, uint32 C, uint32 D, uint32 X, uint8 S, uint32 T)
 {
     // a = b + ((a + F(b,c,d) + X[k] + T[i]) <<< s)
     uint32 result = A + MD5AuxF(B, C, D) + X + T;
-    result = MD5RotateLeft(result, S);
+    result = CircularBitShiftLeft(result, S);
     return B + result;
 }
 
 
 internal uint32
-MD5TransformGG(uint32 A, uint32 B, uint32 C, uint32 D, uint32 X, int S, uint32 T)
+MD5TransformGG(uint32 A, uint32 B, uint32 C, uint32 D, uint32 X, uint8 S, uint32 T)
 {
     // a = b + ((a + G(b,c,d) + X[k] + T[i]) <<< s)
     uint32 result = A + MD5AuxG(B, C, D) + X + T;
-    result = MD5RotateLeft(result, S);
+    result = CircularBitShiftLeft(result, S);
     return B + result;
 }
 
 
 internal uint32
-MD5TransformHH(uint32 A, uint32 B, uint32 C, uint32 D, uint32 X, int S, uint32 T)
+MD5TransformHH(uint32 A, uint32 B, uint32 C, uint32 D, uint32 X, uint8 S, uint32 T)
 {
     // a = b + ((a + H(b,c,d) + X[k] + T[i]) <<< s)
     uint32 result = A + MD5AuxH(B, C, D) + X + T;
-    result = MD5RotateLeft(result, S);
+    result = CircularBitShiftLeft(result, S);
     return B + result;
 }
 
 
 internal uint32
-MD5TransformII(uint32 A, uint32 B, uint32 C, uint32 D, uint32 X, int S, uint32 T)
+MD5TransformII(uint32 A, uint32 B, uint32 C, uint32 D, uint32 X, uint8 S, uint32 T)
 {
     // a = b + ((a + H(b,c,d) + X[k] + T[i]) <<< s)
     uint32 result = A + MD5AuxI(B, C, D) + X + T;
-    result = MD5RotateLeft(result, S);
+    result = CircularBitShiftLeft(result, S);
     return B + result;
 }
 
 
+// TODO (Aaron): Rename byteLength to byteCount?
 internal void
 MD5UpdateHash(md5_context *context, uint8 *ptr, uint32 byteLength)
 {
@@ -135,7 +130,7 @@ MD5UpdateHash(md5_context *context, uint8 *ptr, uint32 byteLength)
         uint32 C = context->State[2];
         uint32 D = context->State[3];
 
-        // Perform transformations
+        // Perform MD5 transformations
         // Round 1
         A = MD5TransformFF(A, B, C, D, block[0], 7, 0xd76aa478);
         D = MD5TransformFF(D, A, B, C, block[1], 12, 0xe8c7b756);
