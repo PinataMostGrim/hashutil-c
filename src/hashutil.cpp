@@ -2,16 +2,17 @@
 
 #include "hashutil.h"
 #include "md5.h"
+#include "sha1.h"
 
-global_variable int MAX_ARGS = 2;
 
 internal void
 PrintUsage()
 {
-    printf("usage: hashutil [-f] message\n\n");
+    printf("usage: hashutil [-f] algorithm message\n\n");
     printf("Produces a message or file digest using various hashing algorithms.\n\n");
 
     printf("positional arguments:\n");
+    printf("  algorithm\t\tHashing algorithm to use\n");
     printf("  message\t\tMessage to hash\n");
     printf("\n");
 
@@ -27,6 +28,8 @@ int main(int argc, char const *argv[])
     bool processOptionalArgs = true;
     bool usageFlag = false;
     bool fileFlag = false;
+    bool algorithmConsumed = false;
+    char *algorithmPtr = (char *)"";
     bool messageConsumed = false;
     char *messagePtr = (char *)"";
 
@@ -51,10 +54,18 @@ int main(int argc, char const *argv[])
             continue;
         }
 
-        if(!messageConsumed)
+        if (!algorithmConsumed)
+        {
+            algorithmPtr = (char *)argv[i];
+            algorithmConsumed = true;
+            continue;
+        }
+
+        if (!messageConsumed)
         {
             messagePtr = (char *)argv[i];
             messageConsumed = true;
+            continue;
         }
     }
 
@@ -64,36 +75,59 @@ int main(int argc, char const *argv[])
         return 0;
     }
 
-    // Error out on invalid arguments
-    int argCount = argc - 1;
-    if ((argCount == 0) || (argCount > MAX_ARGS))
+    // Error out on missing or invalid arguments
+    if (!algorithmConsumed)
     {
-        printf("Error: Incorrect number of command line arguments supplied; expected %i but received %i\n", MAX_ARGS, argCount);
+        printf("'algorithm' argument missing\n\n");
         PrintUsage();
-
         return 1;
     }
 
     if(!messageConsumed)
     {
-        printf("'Message' argument missing\n\n");
+        printf("'message' argument missing\n\n");
+        PrintUsage();
         return 1;
     }
 
-
-    md5_context result = {};
-    if(fileFlag)
+    // Switch on algorithm selected
+    if (strcmp(algorithmPtr, "md5") == 0)
     {
-        printf("Calculating MD5 hash for file \"%s\":\n", messagePtr);
-        result = MD5HashFile(messagePtr);
+        md5_context result = {};
+        if(fileFlag)
+        {
+            printf("Calculating MD5 hash for file \"%s\":\n", messagePtr);
+            result = MD5HashFile(messagePtr);
+        }
+        else
+        {
+            printf("Calculating MD5 hash for string \"%s\":\n", messagePtr);
+            result = MD5HashString(messagePtr);
+        }
+
+        printf("%s\n", result.DigestStr);
+    }
+    else if (strcmp(algorithmPtr, "sha1") == 0)
+    {
+        sha1_context result = {};
+        if(fileFlag)
+        {
+            printf("Calculating SHA1 hash for file \"%s\":\n", messagePtr);
+            result = SHA1HashFile(messagePtr);
+        }
+        else
+        {
+            printf("Calculating SHA1 hash for string \"%s\":\n", messagePtr);
+            result = SHA1HashString(messagePtr);
+        }
+
+        printf("%s\n", result.DigestStr);
     }
     else
     {
-        printf("Calculating MD5 hash for string \"%s\":\n", messagePtr);
-        result = MD5HashString(messagePtr);
+        printf("Unsupported algorithm selected\n");
+        return 1;
     }
 
-    printf("%s\n", result.DigestStr);
-
-    return EXIT_SUCCESS;
+    return 0;
 }
