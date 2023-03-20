@@ -5,18 +5,40 @@
 
 global_variable int MAX_ARGS = 2;
 
+internal void
+PrintUsage()
+{
+    printf("usage: hashutil [-f] message\n\n");
+    printf("Produces a message or file digest using various hashing algorithms.\n\n");
+
+    printf("positional arguments:\n");
+    printf("  message\t\tMessage to hash\n");
+    printf("\n");
+
+    printf("options:\n");
+    printf("-f, --file\t\tHashes a file. Message is treated as a path.\n");
+    printf("\n");
+}
+
 
 int main(int argc, char const *argv[])
 {
     // Process command line arguments
     bool processOptionalArgs = true;
+    bool usageFlag = false;
     bool fileFlag = false;
     bool messageConsumed = false;
-    char *messagePtr = (char *)argv[0];
+    char *messagePtr = (char *)"";
 
     for (int i = 1; i < argc; ++i)
     {
-        if(strcmp(argv[i], "--") == 0)
+        if ((strncmp(argv[i], "-h", 2) == 0) || (strncmp(argv[i], "--help", 6) == 0))
+        {
+            usageFlag = true;
+            break;
+        }
+
+        if (strcmp(argv[i], "--") == 0)
         {
             processOptionalArgs = false;
             continue;
@@ -36,23 +58,26 @@ int main(int argc, char const *argv[])
         }
     }
 
+    if (usageFlag)
+    {
+        PrintUsage();
+        return 0;
+    }
+
     // Error out on invalid arguments
     int argCount = argc - 1;
-    if (argCount == 0)
+    if ((argCount == 0) || (argCount > MAX_ARGS))
     {
         printf("Error: Incorrect number of command line arguments supplied; expected %i but received %i\n", MAX_ARGS, argCount);
-        return EXIT_FAILURE;
+        PrintUsage();
+
+        return 1;
     }
 
     if(!messageConsumed)
     {
-        printf("Message argument missing");
-        return EXIT_FAILURE;
-    }
-
-    if (argCount > MAX_ARGS)
-    {
-        printf("Warning: Too many command line arguments supplied; expected %i but received %i\n", MAX_ARGS, argCount);
+        printf("'Message' argument missing\n\n");
+        return 1;
     }
 
 
