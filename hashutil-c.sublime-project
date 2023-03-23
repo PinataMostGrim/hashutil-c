@@ -11,13 +11,23 @@
         {
             // Requires "vcvarsall.bat" be accessible via PATH
             "name": "Build hashutil x64",
-            "shell_cmd": "call vcvarsall.bat x64 && build-hashutil.bat",
+            "windows":
+            {
+                // file_regex for cl
+                "file_regex": "^(..[^(\n]*)\\(([0-9]+)\\):():? (.*)$",
+                "shell_cmd": "call vcvarsall.bat x64 && build-hashutil.bat",
+            },
+            "linux":
+            {
+                // file_regex for clang
+                "file_regex": "^(..[^:\\n]*):([0-9]+):?([0-9]+)?:? (.*)$",
+                "shell_cmd": "./build-hashutil.sh"
+            },
             "working_dir": "${project_path}",
             "env":
             {
                 "DEBUG": "0"
             },
-            "file_regex": "^(..[^(]*)\\(([0-9]+)\\):():? (.*)$",
             "quiet": true,
             "variants" :
             [
@@ -33,13 +43,34 @@
         {
             // Requires "vcvarsall.bat" be accessible via PATH
             "name": "Test hashutil",
-            "shell_cmd": "call vcvarsall.bat x64 && build-test-hashutil.bat && bin\\test-hashutil",
+            "windows":
+            {
+                // file_regex for cl
+                "file_regex": "^(..[^(\n]*)\\(([0-9]+)\\):():? (.*)$",
+                "shell_cmd": "call vcvarsall.bat x64 && build-test-hashutil.bat && bin\\test-hashutil",
+            },
+            "linux":
+            {
+                // file_regex for clang
+                "file_regex": "^(..[^:\\n]*):([0-9]+):?([0-9]+)?:? (.*)$",
+                "shell_cmd": "./build-test-hashutil.sh && bin/test-hashutil"
+            },
             "working_dir": "${project_path}",
             "env":
             {
                 "DEBUG": "0"
             },
             "quiet": true,
+            "variants" :
+            [
+                {
+                    "name": "Debug",
+                    "env":
+                    {
+                        "DEBUG": "1"
+                    },
+                },
+            ],
         },
     ],
     "settings":

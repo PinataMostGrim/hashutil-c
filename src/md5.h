@@ -15,28 +15,6 @@ struct md5_context
 };
 
 
-// Note (Aaron): This is a naive implementation
-internal void
-MemoryCopy(const uint8 *source, uint8 *destination, size_t count)
-{
-    for (int i = 0; i < count; ++i)
-    {
-        *(destination + i) = *(source + i);
-    }
-}
-
-
-internal void
-MemoryZero(uint8 *ptr, size_t count)
-{
-    for (int i = 0; i < count; ++i)
-    {
-        *(ptr + i) = 0;
-    }
-}
-
-
-
 // #define MD5AuxF(X, Y, Z) (((X) & (Y)) | ((~X) & (Z)))
 internal uint32
 MD5AuxF(uint32 x, uint32 y, uint32 z)
@@ -78,62 +56,56 @@ MD5AuxI(uint32 x, uint32 y, uint32 z)
 
 
 internal uint32
-MD5RotateLeft(uint32 x, int s)
-{
-    return (x << s) | (x >> (32-s));
-}
-
-internal uint32
-MD5TransformFF(uint32 A, uint32 B, uint32 C, uint32 D, uint32 X, int S, uint32 T)
+MD5TransformFF(uint32 A, uint32 B, uint32 C, uint32 D, uint32 X, uint8 S, uint32 T)
 {
     // a = b + ((a + F(b,c,d) + X[k] + T[i]) <<< s)
     uint32 result = A + MD5AuxF(B, C, D) + X + T;
-    result = MD5RotateLeft(result, S);
+    result = CircularBitShiftLeft(result, S);
     return B + result;
 }
 
 
 internal uint32
-MD5TransformGG(uint32 A, uint32 B, uint32 C, uint32 D, uint32 X, int S, uint32 T)
+MD5TransformGG(uint32 A, uint32 B, uint32 C, uint32 D, uint32 X, uint8 S, uint32 T)
 {
     // a = b + ((a + G(b,c,d) + X[k] + T[i]) <<< s)
     uint32 result = A + MD5AuxG(B, C, D) + X + T;
-    result = MD5RotateLeft(result, S);
+    result = CircularBitShiftLeft(result, S);
     return B + result;
 }
 
 
 internal uint32
-MD5TransformHH(uint32 A, uint32 B, uint32 C, uint32 D, uint32 X, int S, uint32 T)
+MD5TransformHH(uint32 A, uint32 B, uint32 C, uint32 D, uint32 X, uint8 S, uint32 T)
 {
     // a = b + ((a + H(b,c,d) + X[k] + T[i]) <<< s)
     uint32 result = A + MD5AuxH(B, C, D) + X + T;
-    result = MD5RotateLeft(result, S);
+    result = CircularBitShiftLeft(result, S);
     return B + result;
 }
 
 
 internal uint32
-MD5TransformII(uint32 A, uint32 B, uint32 C, uint32 D, uint32 X, int S, uint32 T)
+MD5TransformII(uint32 A, uint32 B, uint32 C, uint32 D, uint32 X, uint8 S, uint32 T)
 {
     // a = b + ((a + H(b,c,d) + X[k] + T[i]) <<< s)
     uint32 result = A + MD5AuxI(B, C, D) + X + T;
-    result = MD5RotateLeft(result, S);
+    result = CircularBitShiftLeft(result, S);
     return B + result;
 }
 
 
+// TODO (Aaron): Rename byteLength to byteCount?
 internal void
 MD5UpdateHash(md5_context *context, uint8 *ptr, uint32 byteLength)
 {
-    // Assert that the block length is divisible by 64 bytes
+    // Assert that the block length is divisible by 512 bits (64 bytes)
     Assert(byteLength % 64 == 0);
 
+    // Create 512-bit block
     uint32 block[16] = {};
 
-    // Generate sin table T
-
-    // Note (Aaron): Iterate over 64 byte blocks of the message.
+    // Note (Aaron): Iterate over 512-bit (64 byte) blocks of the message.
     // 'i' represents the byte position in the message.
     for (uint32 i = 0;
          i < (byteLength);
@@ -158,7 +130,7 @@ MD5UpdateHash(md5_context *context, uint8 *ptr, uint32 byteLength)
         uint32 C = context->State[2];
         uint32 D = context->State[3];
 
-        // Perform transformations
+        // Perform MD5 transformations
         // Round 1
         A = MD5TransformFF(A, B, C, D, block[0], 7, 0xd76aa478);
         D = MD5TransformFF(D, A, B, C, block[1], 12, 0xe8c7b756);
@@ -266,7 +238,7 @@ MD5CalculateDigest(md5_context *context)
         context->Digest[j+2] = (uint8)((context->State[i] >> 16) & 0xff);
         context->Digest[j+3] = (uint8)((context->State[i] >> 24) & 0xff);
 
-        sprintf_s(context->DigestStr + (j*2), 9,"%02x%02x%02x%02x", context->Digest[j], context->Digest[j+1], context->Digest[j+2], context->Digest[i*4+3]);
+        sprintf(context->DigestStr + (j*2),"%02x%02x%02x%02x", context->Digest[j], context->Digest[j+1], context->Digest[j+2], context->Digest[i*4+3]);
     }
 }
 
@@ -294,6 +266,8 @@ MD5HashString(char *messagePtr)
     }
 
     // Allocate memory to store the message remainder + padding + encoded message length
+    // We use a buffer length of 1024 bits to cover the worst case scenario,
+    // where the length of the message remainder is between 477 and 512 bits.
     uint8 buffer[BUFFER_BYTE_SIZE] = {};
     uint8 *bufferPtr = buffer;
     bool useExtendedMargine = (byteCount >= (CHUNK_BYTE_COUNT - 8));
@@ -347,16 +321,14 @@ MD5HashFile(const char *fileName)
     const uint32 BUFFER_BYTE_SIZE = 128;
 
     uint8 buffer[BUFFER_BYTE_SIZE] = {};
-    FILE *file;
-    errno_t error;
     size_t bytesRead;
     uint32 byteCount = 0;
 
-    error = fopen_s(&file, fileName, "rb");
+    FILE *file = fopen(fileName, "rb");
     if(!file)
     {
         printf("Unable to open file '%s'", fileName);
-        exit(EXIT_FAILURE);
+        exit(1);
     }
 
     md5_context result = {};
@@ -390,7 +362,7 @@ MD5HashFile(const char *fileName)
     {
         printf("Error reading file '%s'", fileName);
         fclose(file);
-        exit(EXIT_FAILURE);
+        exit(1);
     }
 
     fclose(file);
