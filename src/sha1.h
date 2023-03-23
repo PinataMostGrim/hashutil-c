@@ -30,14 +30,25 @@ struct sha1_context
     char DigestStr[41];
 };
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 internal sha1_context SHA1HashString(char *messagePtr);
 internal sha1_context SHA1HashFile(const char *fileName);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // HASHUTIL_SHA1_H
 
 
 #ifdef HASHUTIL_SHA1_IMPLEMENTATION
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 internal void
 SHA1UpdateHash(sha1_context *context, uint8 *messagePtr, uint64 byteCount)
@@ -379,5 +390,9 @@ SHA1HashFile(const char *fileName)
 
     return result;
 }
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // HASHUTIL_SHA1_IMPLEMENTATION
