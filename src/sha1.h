@@ -34,8 +34,8 @@ struct sha1_context
 extern "C" {
 #endif
 
-internal sha1_context SHA1HashString(char *messagePtr);
-internal sha1_context SHA1HashFile(const char *fileName);
+static sha1_context SHA1HashString(char *messagePtr);
+static sha1_context SHA1HashFile(const char *fileName);
 
 #ifdef __cplusplus
 }
@@ -50,11 +50,31 @@ internal sha1_context SHA1HashFile(const char *fileName);
 extern "C" {
 #endif
 
-internal void
-SHA1UpdateHash(sha1_context *context, uint8 *messagePtr, uint64_t byteCount)
+#if HASHUTIL_SLOW
+#define SHA1Assert(Expression) if (!(Expression)) {*(int *)0 = 0;}
+#else
+#define SHA1Assert(Expression)
+#endif
+
+static void SHA1MemoryCopy(const uint8 *source, uint8 *destination, size_t count)
+{
+    for (int i = 0; i < count; ++i)
+    {
+        *(destination + i) = *(source + i);
+    }
+}
+
+
+static uint32_t SHA1CircularBitShiftLeft(uint32_t value, uint8_t count)
+{
+    return (value << count) | (value >> (32-count));
+}
+
+
+static void SHA1UpdateHash(sha1_context *context, uint8 *messagePtr, uint64_t byteCount)
 {
     // Assert that the message is divisible by 512-bits (64 bytes)
-    Assert(byteCount % 64 == 0);
+    SHA1Assert(byteCount % 64 == 0);
 
     uint32_t A, B, C, D, E = 0;
     uint32_t W[80] = {};
@@ -80,7 +100,7 @@ SHA1UpdateHash(sha1_context *context, uint8 *messagePtr, uint64_t byteCount)
         for (int t = 16; t < 80; ++t)
         {
             //  W(t) = S^1(W(t-3) XOR W(t-8) XOR W(t-14) XOR W(t-16))
-            W[t] = CircularBitShiftLeft(
+            W[t] = SHA1CircularBitShiftLeft(
                 (W[t - 3] ^ W[t - 8] ^ W[t - 14] ^ W[t - 16]),
                 1);
         }
@@ -99,14 +119,14 @@ SHA1UpdateHash(sha1_context *context, uint8 *messagePtr, uint64_t byteCount)
         {
             // f(t;B,C,D) = (B AND C) OR ((NOT B) AND D)         ( 0 <= t <= 19)
             // K(t) = 5A827999         ( 0 <= t <= 19)
-            temp = CircularBitShiftLeft(A, 5);
+            temp = SHA1CircularBitShiftLeft(A, 5);
             temp += ((B & C) | ((~B) & D))
                 + E
                 + W[t]
                 + 0x5a827999;
             E = D;
             D = C;
-            C = CircularBitShiftLeft(B, 30);
+            C = SHA1CircularBitShiftLeft(B, 30);
             B = A;
             A = temp;
         }
@@ -115,14 +135,14 @@ SHA1UpdateHash(sha1_context *context, uint8 *messagePtr, uint64_t byteCount)
         {
             // f(t;B,C,D) = B XOR C XOR D                        (20 <= t <= 39)
             // K(t) = 6ED9EBA1         (20 <= t <= 39)
-            temp = CircularBitShiftLeft(A, 5);
+            temp = SHA1CircularBitShiftLeft(A, 5);
             temp += (B ^ C ^ D)
                 + E
                 + W[t]
                 + 0x6ed9eba1;
             E = D;
             D = C;
-            C = CircularBitShiftLeft(B, 30);
+            C = SHA1CircularBitShiftLeft(B, 30);
             B = A;
             A = temp;
         }
@@ -131,7 +151,7 @@ SHA1UpdateHash(sha1_context *context, uint8 *messagePtr, uint64_t byteCount)
         {
             // f(t;B,C,D) = (B AND C) OR (B AND D) OR (C AND D)  (40 <= t <= 59)
             // K(t) = 8F1BBCDC         (40 <= t <= 59)
-            temp = CircularBitShiftLeft(A, 5);
+            temp = SHA1CircularBitShiftLeft(A, 5);
             temp += ((B & C) | (B & D) | (C & D))
                 + E
                 + W[t]
@@ -139,14 +159,14 @@ SHA1UpdateHash(sha1_context *context, uint8 *messagePtr, uint64_t byteCount)
 
             E = D;
             D = C;
-            C = CircularBitShiftLeft(B, 30);
+            C = SHA1CircularBitShiftLeft(B, 30);
             B = A;
             A = temp;
         }
 
         for (int t = 60; t < 80; ++t)
         {
-            temp = CircularBitShiftLeft(A, 5);
+            temp = SHA1CircularBitShiftLeft(A, 5);
             // f(t;B,C,D) = B XOR C XOR D                        (60 <= t <= 79)
             // K(t) = CA62C1D6         (60 <= t <= 79).
             temp += (B ^ C ^ D)
@@ -156,7 +176,7 @@ SHA1UpdateHash(sha1_context *context, uint8 *messagePtr, uint64_t byteCount)
 
             E = D;
             D = C;
-            C = CircularBitShiftLeft(B, 30);
+            C = SHA1CircularBitShiftLeft(B, 30);
             B = A;
             A = temp;
         }
@@ -172,8 +192,7 @@ SHA1UpdateHash(sha1_context *context, uint8 *messagePtr, uint64_t byteCount)
 }
 
 
-internal void
-SHA1ConstructDigest(sha1_context *context)
+static void SHA1ConstructDigest(sha1_context *context)
 {
     sprintf(context->DigestStr,
             "%08x%08x%08x%08x%08x",
@@ -185,8 +204,7 @@ SHA1ConstructDigest(sha1_context *context)
 }
 
 
-internal sha1_context
-SHA1HashString(char *messagePtr)
+static sha1_context SHA1HashString(char *messagePtr)
 {
     const uint32_t BLOCK_SIZE_BYTES = 64;     // 512 bits
     const uint32_t BUFFER_SIZE_BYTES = 128;    // 1024 bits
@@ -196,7 +214,7 @@ SHA1HashString(char *messagePtr)
 
     while(*messagePtr != 0x00)
     {
-        Assert(byteCount <= BLOCK_SIZE_BYTES);
+        SHA1Assert(byteCount <= BLOCK_SIZE_BYTES);
 
         messagePtr++;
         byteCount++;
@@ -229,10 +247,10 @@ SHA1HashString(char *messagePtr)
 
     // Assert message remainder is small enough to fit into the buffer along with
     // padding and message length.
-    Assert(byteCount < ((useExtendedBuffer ? BUFFER_SIZE_BYTES : BLOCK_SIZE_BYTES) - 8 - 1));
+    SHA1Assert(byteCount < ((useExtendedBuffer ? BUFFER_SIZE_BYTES : BLOCK_SIZE_BYTES) - 8 - 1));
 
     // Copy message remainder into the buffer
-    MemoryCopy((uint8 *)(messagePtr - byteCount), bufferPtr, byteCount);
+    SHA1MemoryCopy((uint8 *)(messagePtr - byteCount), bufferPtr, byteCount);
 
     // Apply padded 1
     uint8 *paddingPtr = bufferPtr + byteCount;
@@ -282,8 +300,7 @@ SHA1HashString(char *messagePtr)
 }
 
 
-internal sha1_context
-SHA1HashFile(const char *fileName)
+static sha1_context SHA1HashFile(const char *fileName)
 {
     const uint32_t BLOCK_SIZE_BYTES = 64;     // 512 bits
     const uint32_t BUFFER_SIZE_BYTES = 128;    // 1024 bits
@@ -308,7 +325,7 @@ SHA1HashFile(const char *fileName)
     bytesRead = fread(buffer, readElementSize, readBlockSize, file);
     while(bytesRead)
     {
-        Assert(bytesRead <= BLOCK_SIZE_BYTES);
+        SHA1Assert(bytesRead <= BLOCK_SIZE_BYTES);
 
         result.MessageLengthBits += (bytesRead * 8);
         // Note (Aaron): Hashes are updated using 'byteCount' rather that 'bytesRead' as
@@ -343,7 +360,7 @@ SHA1HashFile(const char *fileName)
 
     // Assert message remainder is small enough to fit into the buffer along with
     // padding and message length.
-    Assert(byteCount < (BUFFER_SIZE_BYTES - 8 - 1));
+    SHA1Assert(byteCount < (BUFFER_SIZE_BYTES - 8 - 1));
 
     // Apply padded 1
     uint8 *paddingPtr = bufferPtr + byteCount;
