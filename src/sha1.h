@@ -1,6 +1,7 @@
 #ifndef HASHUTIL_SHA1_H
 #define HASHUTIL_SHA1_H
 
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -10,20 +11,19 @@
 #include <string.h>
 #endif
 
-
 struct sha1_context
 {
-    uint64 MessageLengthBits = 0;
+    uint64_t MessageLengthBits = 0;
     union
     {
-        uint32 H[5] = {0x67452301, 0xefcdab89, 0x98badcfe, 0x10325476, 0xc3d2e1f0};
+        uint32_t H[5] = {0x67452301, 0xefcdab89, 0x98badcfe, 0x10325476, 0xc3d2e1f0};
         struct
         {
-            uint32 H0;
-            uint32 H1;
-            uint32 H2;
-            uint32 H3;
-            uint32 H4;
+            uint32_t H0;
+            uint32_t H1;
+            uint32_t H2;
+            uint32_t H3;
+            uint32_t H4;
         };
     };
 
@@ -51,17 +51,17 @@ extern "C" {
 #endif
 
 internal void
-SHA1UpdateHash(sha1_context *context, uint8 *messagePtr, uint64 byteCount)
+SHA1UpdateHash(sha1_context *context, uint8 *messagePtr, uint64_t byteCount)
 {
     // Assert that the message is divisible by 512-bits (64 bytes)
     Assert(byteCount % 64 == 0);
 
-    uint32 A, B, C, D, E = 0;
-    uint32 W[80] = {};
-    uint32 temp = 0;
+    uint32_t A, B, C, D, E = 0;
+    uint32_t W[80] = {};
+    uint32_t temp = 0;
 
     // 'i' holds the position (offset from ptr) of the current 512 bit block of the message being processed
-    for (uint64 i = 0;
+    for (uint64_t i = 0;
          i < byteCount;
          i+=64)
     {
@@ -70,10 +70,10 @@ SHA1UpdateHash(sha1_context *context, uint8 *messagePtr, uint64 byteCount)
         // 16 words == 64 bytes == 512 bits
         for (int j = 0; j < 16; ++j)
         {
-            W[j] = (uint32)(*(messagePtr + i + (j * 4)) << 24)
-                | (uint32)(*(messagePtr + i + (j * 4) + 1) << 16)
-                | (uint32)(*(messagePtr + i + (j * 4) + 2) << 8)
-                | (uint32)(*(messagePtr + i + (j * 4) + 3));
+            W[j] = (uint32_t)(*(messagePtr + i + (j * 4)) << 24)
+                | (uint32_t)(*(messagePtr + i + (j * 4) + 1) << 16)
+                | (uint32_t)(*(messagePtr + i + (j * 4) + 2) << 8)
+                | (uint32_t)(*(messagePtr + i + (j * 4) + 3));
         }
 
         // b. For t = 16 to 79 let
@@ -188,11 +188,11 @@ SHA1ConstructDigest(sha1_context *context)
 internal sha1_context
 SHA1HashString(char *messagePtr)
 {
-    const uint32 BLOCK_SIZE_BYTES = 64;     // 512 bits
-    const uint32 BUFFER_SIZE_BYTES = 128;    // 1024 bits
+    const uint32_t BLOCK_SIZE_BYTES = 64;     // 512 bits
+    const uint32_t BUFFER_SIZE_BYTES = 128;    // 1024 bits
 
     sha1_context result = {};
-    uint64 byteCount = 0;
+    uint64_t byteCount = 0;
 
     while(*messagePtr != 0x00)
     {
@@ -252,10 +252,10 @@ SHA1HashString(char *messagePtr)
     }
 
     // Append length of message as a 64-bit number (in big endian)
-    uint64 *sizePtr = (uint64 *)paddingPtr;
-    uint64 messageLength64 = result.MessageLengthBits;
+    uint64_t *sizePtr = (uint64_t *)paddingPtr;
+    uint64_t messageLength64 = result.MessageLengthBits;
 
-    uint32 endianTest = 0xdeadbeef;
+    uint32_t endianTest = 0xdeadbeef;
     bool isLittleEndian = *(unsigned char *)&endianTest;
     if (isLittleEndian)
     {
@@ -285,13 +285,13 @@ SHA1HashString(char *messagePtr)
 internal sha1_context
 SHA1HashFile(const char *fileName)
 {
-    const uint32 BLOCK_SIZE_BYTES = 64;     // 512 bits
-    const uint32 BUFFER_SIZE_BYTES = 128;    // 1024 bits
+    const uint32_t BLOCK_SIZE_BYTES = 64;     // 512 bits
+    const uint32_t BUFFER_SIZE_BYTES = 128;    // 1024 bits
 
     uint8 buffer[BUFFER_SIZE_BYTES] = {};
     uint8 *bufferPtr = buffer;
     size_t bytesRead;
-    uint64 byteCount = 0;
+    uint64_t byteCount = 0;
 
     FILE *file = fopen(fileName, "rb");
     if(!file)
@@ -313,7 +313,7 @@ SHA1HashFile(const char *fileName)
         result.MessageLengthBits += (bytesRead * 8);
         // Note (Aaron): Hashes are updated using 'byteCount' rather that 'bytesRead' as
         // 'bytesRead' will be 0 after exiting the loop.
-        byteCount = (uint64)bytesRead;
+        byteCount = (uint64_t)bytesRead;
 
         if(byteCount == BLOCK_SIZE_BYTES)
         {
@@ -362,10 +362,10 @@ SHA1HashFile(const char *fileName)
     }
 
     // Append length of message as a 64-bit number (in big endian)
-    uint64 *sizePtr = (uint64 *)paddingPtr;
-    uint64 messageLength64 = result.MessageLengthBits;
+    uint64_t *sizePtr = (uint64_t *)paddingPtr;
+    uint64_t messageLength64 = result.MessageLengthBits;
 
-    uint32 endianTest = 0xdeadbeef;
+    uint32_t endianTest = 0xdeadbeef;
     bool isLittleEndian = *(unsigned char *)&endianTest;
     if (isLittleEndian)
     {
