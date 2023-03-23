@@ -1,4 +1,6 @@
-#if !defined(SHA1_H)
+#ifndef HASHUTIL_SHA1_H
+#define HASHUTIL_SHA1_H
+
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -28,6 +30,14 @@ struct sha1_context
     char DigestStr[41];
 };
 
+
+internal sha1_context SHA1HashString(char *messagePtr);
+internal sha1_context SHA1HashFile(const char *fileName);
+
+#endif // HASHUTIL_SHA1_H
+
+
+#ifdef HASHUTIL_SHA1_IMPLEMENTATION
 
 internal void
 SHA1UpdateHash(sha1_context *context, uint8 *messagePtr, uint64 byteCount)
@@ -370,5 +380,4 @@ SHA1HashFile(const char *fileName)
     return result;
 }
 
-#define SHA1_H
-#endif
+#endif // HASHUTIL_SHA1_IMPLEMENTATION
