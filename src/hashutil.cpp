@@ -125,7 +125,8 @@ int main(int argc, char const *argv[])
     }
     else if (strcmp(algorithmPtr, "sha1") == 0)
     {
-        sha1_context result = {};
+        sha1_context result;
+        SHA1InitializeContext(&result);
         if(fileFlag)
         {
             printf("Calculating SHA1 hash for file \"%s\":\n", messagePtr);
