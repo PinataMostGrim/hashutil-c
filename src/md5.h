@@ -35,8 +35,7 @@ internal void MD5InitializeContext(md5_context *context)
 }
 
 // #define MD5AuxF(X, Y, Z) (((X) & (Y)) | ((~X) & (Z)))
-internal uint32
-MD5AuxF(uint32 x, uint32 y, uint32 z)
+internal uint32 MD5AuxF(uint32 x, uint32 y, uint32 z)
 {
     // Function F(X,Y,Z) = XY v not(X) Z
     uint32 result = (x & y) | (~x & z);
@@ -45,8 +44,7 @@ MD5AuxF(uint32 x, uint32 y, uint32 z)
 
 
 // #define MD5AuxG(X, Y, Z) (((X) & (Z)) | ((Y) & (~Z)))
-internal uint32
-MD5AuxG(uint32 x, uint32 y, uint32 z)
+internal uint32 MD5AuxG(uint32 x, uint32 y, uint32 z)
 {
     // Function G(X,Y,Z) = XZ v Y not(Z)
     uint32 result = (x & z) | (y & ~z);
@@ -55,8 +53,7 @@ MD5AuxG(uint32 x, uint32 y, uint32 z)
 
 
 // #define MD5AuxH(X, Y, Z) ((X) ^ (Y) ^ (Z))
-internal uint32
-MD5AuxH(uint32 x, uint32 y, uint32 z)
+internal uint32 MD5AuxH(uint32 x, uint32 y, uint32 z)
 {
     // Function H(X,Y,Z) = X xor Y xor Z
     uint32 result = (x ^ y ^ z);
@@ -65,8 +62,7 @@ MD5AuxH(uint32 x, uint32 y, uint32 z)
 
 
 // #define MD5AuxI(X, Y, Z) ((Y) ^ ((X) | (~Z)))
-internal uint32
-MD5AuxI(uint32 x, uint32 y, uint32 z)
+internal uint32 MD5AuxI(uint32 x, uint32 y, uint32 z)
 {
     // Function I(X,Y,Z) = Y xor (X v not(Z))
     uint32 result = y ^ (x | ~z);
@@ -74,8 +70,7 @@ MD5AuxI(uint32 x, uint32 y, uint32 z)
 }
 
 
-internal uint32
-MD5TransformFF(uint32 A, uint32 B, uint32 C, uint32 D, uint32 X, uint8 S, uint32 T)
+internal uint32 MD5TransformFF(uint32 A, uint32 B, uint32 C, uint32 D, uint32 X, uint8 S, uint32 T)
 {
     // a = b + ((a + F(b,c,d) + X[k] + T[i]) <<< s)
     uint32 result = A + MD5AuxF(B, C, D) + X + T;
@@ -84,8 +79,7 @@ MD5TransformFF(uint32 A, uint32 B, uint32 C, uint32 D, uint32 X, uint8 S, uint32
 }
 
 
-internal uint32
-MD5TransformGG(uint32 A, uint32 B, uint32 C, uint32 D, uint32 X, uint8 S, uint32 T)
+internal uint32 MD5TransformGG(uint32 A, uint32 B, uint32 C, uint32 D, uint32 X, uint8 S, uint32 T)
 {
     // a = b + ((a + G(b,c,d) + X[k] + T[i]) <<< s)
     uint32 result = A + MD5AuxG(B, C, D) + X + T;
@@ -94,8 +88,7 @@ MD5TransformGG(uint32 A, uint32 B, uint32 C, uint32 D, uint32 X, uint8 S, uint32
 }
 
 
-internal uint32
-MD5TransformHH(uint32 A, uint32 B, uint32 C, uint32 D, uint32 X, uint8 S, uint32 T)
+internal uint32 MD5TransformHH(uint32 A, uint32 B, uint32 C, uint32 D, uint32 X, uint8 S, uint32 T)
 {
     // a = b + ((a + H(b,c,d) + X[k] + T[i]) <<< s)
     uint32 result = A + MD5AuxH(B, C, D) + X + T;
@@ -104,8 +97,7 @@ MD5TransformHH(uint32 A, uint32 B, uint32 C, uint32 D, uint32 X, uint8 S, uint32
 }
 
 
-internal uint32
-MD5TransformII(uint32 A, uint32 B, uint32 C, uint32 D, uint32 X, uint8 S, uint32 T)
+internal uint32 MD5TransformII(uint32 A, uint32 B, uint32 C, uint32 D, uint32 X, uint8 S, uint32 T)
 {
     // a = b + ((a + H(b,c,d) + X[k] + T[i]) <<< s)
     uint32 result = A + MD5AuxI(B, C, D) + X + T;
@@ -114,8 +106,7 @@ MD5TransformII(uint32 A, uint32 B, uint32 C, uint32 D, uint32 X, uint8 S, uint32
 }
 
 
-internal void
-MD5UpdateHash(md5_context *context, uint8 *ptr, uint32 byteCount)
+internal void MD5UpdateHash(md5_context *context, uint8 *ptr, uint32 byteCount)
 {
     // Assert that the block length is divisible by 512 bits (64 bytes)
     Assert(byteCount % 64 == 0);
@@ -247,8 +238,7 @@ MD5UpdateHash(md5_context *context, uint8 *ptr, uint32 byteCount)
 }
 
 
-internal void
-MD5ConstructDigest(md5_context *context)
+internal void MD5ConstructDigest(md5_context *context)
 {
     // Extract digest values, convert to string, and store in context
     unsigned int i, j;
@@ -264,8 +254,7 @@ MD5ConstructDigest(md5_context *context)
 }
 
 
-internal md5_context
-MD5HashString(char *messagePtr)
+internal md5_context MD5HashString(char *messagePtr)
 {
     md5_context result;
     MD5InitializeContext(&result);
@@ -334,8 +323,7 @@ MD5HashString(char *messagePtr)
 }
 
 
-internal md5_context
-MD5HashFile(const char *fileName)
+internal md5_context MD5HashFile(const char *fileName)
 {
     // Note (Aaron): Read the file in 64 byte chunks but allocate 128 bytes in case
     // we need an extended margine when padding the end of the file. 64 byte chunks are
