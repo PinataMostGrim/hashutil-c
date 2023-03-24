@@ -1,6 +1,5 @@
 #include <string.h>
 
-#include "hashutil.h"
 #include "md5.h"
 #define HASHUTIL_SHA1_IMPLEMENTATION
 #include "sha1.h"

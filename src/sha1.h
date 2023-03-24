@@ -7,7 +7,6 @@
 #include <string.h>
 
 
-#include "hashutil.h"
 
 typedef struct sha1_context
 {
