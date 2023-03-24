@@ -114,12 +114,11 @@ MD5TransformII(uint32 A, uint32 B, uint32 C, uint32 D, uint32 X, uint8 S, uint32
 }
 
 
-// TODO (Aaron): Rename byteLength to byteCount?
 internal void
-MD5UpdateHash(md5_context *context, uint8 *ptr, uint32 byteLength)
+MD5UpdateHash(md5_context *context, uint8 *ptr, uint32 byteCount)
 {
     // Assert that the block length is divisible by 512 bits (64 bytes)
-    Assert(byteLength % 64 == 0);
+    Assert(byteCount % 64 == 0);
 
     // Create 512-bit block
     uint32 block[16];
@@ -130,7 +129,7 @@ MD5UpdateHash(md5_context *context, uint8 *ptr, uint32 byteLength)
     // Note (Aaron): Iterate over 512-bit (64 byte) blocks of the message.
     // 'i' represents the byte position in the message.
     for (uint32 i = 0;
-         i < (byteLength);
+         i < (byteCount);
          i+=64)
     {
         for (int j = 0; j < 16; ++j)
@@ -249,7 +248,7 @@ MD5UpdateHash(md5_context *context, uint8 *ptr, uint32 byteLength)
 
 
 internal void
-MD5CalculateDigest(md5_context *context)
+MD5ConstructDigest(md5_context *context)
 {
     // Extract digest values, convert to string, and store in context
     unsigned int i, j;
@@ -329,7 +328,7 @@ MD5HashString(char *messagePtr)
     MemoryZero(bufferPtr, byteCount);
 
     // Calculate hash and return
-    MD5CalculateDigest(&result);
+    MD5ConstructDigest(&result);
 
     return result;
 }
@@ -424,7 +423,7 @@ MD5HashFile(const char *fileName)
     MemoryZero(bufferPtr, byteCount);
 
     // Calculate hash and return
-    MD5CalculateDigest(&result);
+    MD5ConstructDigest(&result);
 
     return result;
 }
