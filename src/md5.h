@@ -1,19 +1,38 @@
-#if !defined(MD5_H)
+#ifndef HASHUTIL_MD5_H
+#define HASHUTIL_MD5_H
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include <stdbool.h>
 
 #include "hashutil.h"
 
+#define MD5_BUFFER_BYTE_SIZE 128
+#define MD5_CHUNK_BYTE_COUNT 64
 
-struct md5_context
+
+typedef struct md5_context
 {
-    uint32 MessageLengthBits = 0;
-    uint32 State[4] = { 0x67452301, 0xefcdab89, 0x98badcfe, 0x10325476 };
-    uint8 Digest[16] = {};
-    char DigestStr[33] = {};
-};
+    uint32 MessageLengthBits;
+    uint32 State[4];
+    uint8 Digest[16];
+    char DigestStr[33];
+} md5_context;
 
+
+internal void MD5InitializeContext(md5_context *context)
+{
+    context->MessageLengthBits = 0;
+    context->State[0] = 0x67452301;
+    context->State[1] = 0xefcdab89;
+    context->State[2] = 0x98badcfe;
+    context->State[3] = 0x10325476;
+#if HASHUTIL_SLOW
+    memset(context->Digest, 0, sizeof(context->Digest));
+    memset(context->DigestStr, 0, sizeof(context->DigestStr));
+#endif
+}
 
 // #define MD5AuxF(X, Y, Z) (((X) & (Y)) | ((~X) & (Z)))
 internal uint32
@@ -103,7 +122,10 @@ MD5UpdateHash(md5_context *context, uint8 *ptr, uint32 byteLength)
     Assert(byteLength % 64 == 0);
 
     // Create 512-bit block
-    uint32 block[16] = {};
+    uint32 block[16];
+#if HASHUTIL_SLOW
+    memset(block, 0, sizeof(block));
+#endif
 
     // Note (Aaron): Iterate over 512-bit (64 byte) blocks of the message.
     // 'i' represents the byte position in the message.
@@ -246,11 +268,10 @@ MD5CalculateDigest(md5_context *context)
 internal md5_context
 MD5HashString(char *messagePtr)
 {
-    const uint32 CHUNK_BYTE_COUNT = 64;
-    const uint32 BUFFER_BYTE_SIZE = 128;
+    md5_context result;
+    MD5InitializeContext(&result);
 
-    md5_context result = {};
-    int byteCount = 0;
+    uint32 byteCount = 0;
 
     while (*messagePtr != 0x00)
     {
@@ -258,7 +279,7 @@ MD5HashString(char *messagePtr)
         result.MessageLengthBits += 8;
         byteCount++;
 
-        if(byteCount == CHUNK_BYTE_COUNT)
+        if(byteCount == MD5_CHUNK_BYTE_COUNT)
         {
             MD5UpdateHash(&result, (uint8 *)(messagePtr - byteCount), byteCount);
             byteCount = 0;
@@ -268,12 +289,15 @@ MD5HashString(char *messagePtr)
     // Allocate memory to store the message remainder + padding + encoded message length
     // We use a buffer length of 1024 bits to cover the worst case scenario,
     // where the length of the message remainder is between 477 and 512 bits.
-    uint8 buffer[BUFFER_BYTE_SIZE] = {};
+    uint8 buffer[MD5_BUFFER_BYTE_SIZE];
+#if HASHUTIL_SLOW
+    memset(buffer, 0, sizeof(buffer));
+#endif
     uint8 *bufferPtr = buffer;
-    bool useExtendedMargine = (byteCount >= (CHUNK_BYTE_COUNT - 8));
+    bool useExtendedMargine = (byteCount >= (MD5_CHUNK_BYTE_COUNT - 8));
 
     // Copy message remainder into the buffer
-    Assert(byteCount < BUFFER_BYTE_SIZE);
+    Assert(byteCount < MD5_BUFFER_BYTE_SIZE);
     MemoryCopy((uint8 *)(messagePtr - byteCount), bufferPtr, byteCount);
 
     // Apply padded 1
@@ -283,8 +307,8 @@ MD5HashString(char *messagePtr)
 
     // Apply padded 0s
     uint8 *paddingEndPtr = useExtendedMargine
-        ? bufferPtr + BUFFER_BYTE_SIZE - 8
-        : bufferPtr + CHUNK_BYTE_COUNT - 8;
+        ? bufferPtr + MD5_BUFFER_BYTE_SIZE - 8
+        : bufferPtr + MD5_CHUNK_BYTE_COUNT - 8;
 
     while (paddingPtr < paddingEndPtr)
     {
@@ -297,7 +321,7 @@ MD5HashString(char *messagePtr)
     *sizePtr = (uint64)result.MessageLengthBits;
 
     // Perform final hash update
-    byteCount = useExtendedMargine ? BUFFER_BYTE_SIZE : CHUNK_BYTE_COUNT;
+    byteCount = useExtendedMargine ? MD5_BUFFER_BYTE_SIZE : MD5_CHUNK_BYTE_COUNT;
     Assert(byteCount == (paddingPtr - bufferPtr) + sizeof(uint64));
     MD5UpdateHash(&result, bufferPtr, byteCount);
 
@@ -317,10 +341,10 @@ MD5HashFile(const char *fileName)
     // Note (Aaron): Read the file in 64 byte chunks but allocate 128 bytes in case
     // we need an extended margine when padding the end of the file. 64 byte chunks are
     // used as this is the size of blocks MD5 processes at one time.
-    const uint32 CHUNK_BYTE_COUNT = 64;
-    const uint32 BUFFER_BYTE_SIZE = 128;
-
-    uint8 buffer[BUFFER_BYTE_SIZE] = {};
+    uint8 buffer[MD5_BUFFER_BYTE_SIZE];
+#if HASHUTIL_SLOW
+    memset(buffer, 0, sizeof(buffer));
+#endif
     size_t bytesRead;
     uint32 byteCount = 0;
 
@@ -331,29 +355,30 @@ MD5HashFile(const char *fileName)
         exit(1);
     }
 
-    md5_context result = {};
+    md5_context result;
+    MD5InitializeContext(&result);
     uint8 *bufferPtr = buffer;
     size_t readElementSize = 1;
-    size_t readBlockSize = sizeof(uint8) * CHUNK_BYTE_COUNT;
+    size_t readBlockSize = sizeof(uint8) * MD5_CHUNK_BYTE_COUNT;
 
     // Update hash using file contents until we run out of chunks of sufficient size
     bytesRead = fread(buffer, readElementSize, readBlockSize, file);
     while(bytesRead)
     {
-        Assert(bytesRead <= CHUNK_BYTE_COUNT);
+        Assert(bytesRead <= MD5_CHUNK_BYTE_COUNT);
         result.MessageLengthBits += ((uint32)bytesRead * 8);
         // Note (Aaron): Hashes are updated using 'byteCount' rather than 'bytesRead' as
         // 'bytesRead' will be 0 after exiting the loop.
         byteCount = (uint32)bytesRead;
 
-        if (byteCount == CHUNK_BYTE_COUNT)
+        if (byteCount == MD5_CHUNK_BYTE_COUNT)
         {
             MD5UpdateHash(&result, bufferPtr, byteCount);
             bytesRead = fread(buffer, readElementSize, readBlockSize, file);
             continue;
         }
 
-        // Note (Aaron): If we ever read less bytes than CHUNK_BYTE_COUNT, it is time to stop
+        // Note (Aaron): If we ever read less bytes than MD5_CHUNK_BYTE_COUNT, it is time to stop
         // reading the file.
         bytesRead = 0;
     }
@@ -368,7 +393,7 @@ MD5HashFile(const char *fileName)
     fclose(file);
 
     // Apply the final hash update with padding
-    bool useExtendedMargine = (byteCount >= (CHUNK_BYTE_COUNT - 8));
+    bool useExtendedMargine = (byteCount >= (MD5_CHUNK_BYTE_COUNT - 8));
 
     // Apply padded 1
     uint8 *paddingPtr = bufferPtr + byteCount;
@@ -377,8 +402,8 @@ MD5HashFile(const char *fileName)
 
     // Apply padded 0s
     uint8 *paddingEndPtr = useExtendedMargine
-        ? bufferPtr + BUFFER_BYTE_SIZE - 8
-        : bufferPtr + CHUNK_BYTE_COUNT - 8;
+        ? bufferPtr + MD5_BUFFER_BYTE_SIZE - 8
+        : bufferPtr + MD5_CHUNK_BYTE_COUNT - 8;
 
     while (paddingPtr < paddingEndPtr)
     {
@@ -391,7 +416,7 @@ MD5HashFile(const char *fileName)
     *sizePtr = (uint64)result.MessageLengthBits;
 
     // Perform final hash update
-    byteCount = useExtendedMargine ? BUFFER_BYTE_SIZE : CHUNK_BYTE_COUNT;
+    byteCount = useExtendedMargine ? MD5_BUFFER_BYTE_SIZE : MD5_CHUNK_BYTE_COUNT;
     Assert(byteCount == (paddingPtr - bufferPtr) + sizeof(uint64));
     MD5UpdateHash(&result, bufferPtr, byteCount);
 
@@ -404,5 +429,4 @@ MD5HashFile(const char *fileName)
     return result;
 }
 
-#define MD5_H
 #endif
