@@ -80,7 +80,7 @@ static void SHA1InitializeContext(sha1_context *context)
 #endif
 }
 
-static void SHA1MemoryCopy(const uint8 *source, uint8 *destination, size_t count)
+static void SHA1MemoryCopy(const uint8_t *source, uint8_t *destination, size_t count)
 {
     for (int i = 0; i < count; ++i)
     {
@@ -95,7 +95,7 @@ static uint32_t SHA1CircularBitShiftLeft(uint32_t value, uint8_t count)
 }
 
 
-static void SHA1UpdateHash(sha1_context *context, uint8 *messagePtr, uint64_t byteCount)
+static void SHA1UpdateHash(sha1_context *context, uint8_t *messagePtr, uint64_t byteCount)
 {
     // Assert that the message is divisible by 512-bits (64 bytes)
     SHA1Assert(byteCount % 64 == 0);
@@ -257,7 +257,7 @@ static sha1_context SHA1HashString(char *messagePtr)
         // Process the message in blocks of 512 bits (64 bytes or sixteen 32-bit words)
         if(byteCount == SHA1_BLOCK_SIZE_BYTES)
         {
-            SHA1UpdateHash(&result, (uint8 *)(messagePtr - byteCount), byteCount);
+            SHA1UpdateHash(&result, (uint8_t *)(messagePtr - byteCount), byteCount);
             byteCount = 0;
         }
     }
@@ -266,8 +266,8 @@ static sha1_context SHA1HashString(char *messagePtr)
     // Note (Aaron): We use a buffer length of 1024 bits to cover the worst case
     // scenario where extra padding is required (where the message remainder is
     // between 447 bits and 512 bits).
-    uint8 buffer[SHA1_BUFFER_SIZE_BYTES];   // 1024 bits
-    uint8 *bufferPtr = buffer;
+    uint8_t buffer[SHA1_BUFFER_SIZE_BYTES];   // 1024 bits
+    uint8_t *bufferPtr = buffer;
 
 #if HASHUTIL_SLOW
     // Note (Aaron): Useful for debug purposes to pack the buffer's bits with 1s
@@ -284,16 +284,16 @@ static sha1_context SHA1HashString(char *messagePtr)
     SHA1Assert(byteCount < ((useExtendedBuffer ? SHA1_BUFFER_SIZE_BYTES : SHA1_BLOCK_SIZE_BYTES) - 8 - 1));
 
     // Copy message remainder into the buffer
-    SHA1MemoryCopy((uint8 *)(messagePtr - byteCount), bufferPtr, byteCount);
+    SHA1MemoryCopy((uint8_t *)(messagePtr - byteCount), bufferPtr, byteCount);
 
     // Apply padded 1
-    uint8 *paddingPtr = bufferPtr + byteCount;
+    uint8_t *paddingPtr = bufferPtr + byteCount;
     *paddingPtr = (1 << 7);
     paddingPtr++;
 
     // Apply padded 0s
     // The last 8 bytes are reserved to store the message length as a 64-bit integer
-    uint8 *paddingEndPtr = useExtendedBuffer
+    uint8_t *paddingEndPtr = useExtendedBuffer
         ? bufferPtr + SHA1_BUFFER_SIZE_BYTES - 8
         : bufferPtr + SHA1_BLOCK_SIZE_BYTES - 8;
 
@@ -336,8 +336,8 @@ static sha1_context SHA1HashString(char *messagePtr)
 
 static sha1_context SHA1HashFile(const char *fileName)
 {
-    uint8 buffer[SHA1_BUFFER_SIZE_BYTES];
-    uint8 *bufferPtr = buffer;
+    uint8_t buffer[SHA1_BUFFER_SIZE_BYTES];
+    uint8_t *bufferPtr = buffer;
 
 #if HASHUTIL_SLOW
     // Note (Aaron): Useful for debug purposes to pack the buffer's bits with 1s
@@ -357,7 +357,7 @@ static sha1_context SHA1HashFile(const char *fileName)
     sha1_context result;
     SHA1InitializeContext(&result);
     size_t readElementSize = 1;
-    size_t readBlockSize = sizeof(uint8) * SHA1_BLOCK_SIZE_BYTES;
+    size_t readBlockSize = sizeof(uint8_t) * SHA1_BLOCK_SIZE_BYTES;
 
     // Update hash using file contents until we run out of blocks of sufficient size
     bytesRead = fread(buffer, readElementSize, readBlockSize, file);
@@ -401,12 +401,12 @@ static sha1_context SHA1HashFile(const char *fileName)
     SHA1Assert(byteCount < (SHA1_BUFFER_SIZE_BYTES - 8 - 1));
 
     // Apply padded 1
-    uint8 *paddingPtr = bufferPtr + byteCount;
+    uint8_t *paddingPtr = bufferPtr + byteCount;
     *paddingPtr = (1 << 7);
     paddingPtr++;
 
     // Apply padded 0s
-    uint8 *paddingEndPtr = useExtendedBuffer
+    uint8_t *paddingEndPtr = useExtendedBuffer
         ? bufferPtr + (SHA1_BUFFER_SIZE_BYTES - 8)
         : buffer + (SHA1_BLOCK_SIZE_BYTES - 8);
 
