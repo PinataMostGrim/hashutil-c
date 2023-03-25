@@ -27,9 +27,9 @@ int main()
     {
         printf("MD5 hash tests:\n");
 
-        md5_context result = {};
+        md5_context result;
         char *messagePtr = (char *)"";
-        char *targetDigest = {};
+        char *targetDigest = "";
 
         result = MD5HashString(messagePtr);
         targetDigest = (char *)"d41d8cd98f00b204e9800998ecf8427e";
@@ -82,9 +82,9 @@ int main()
     {
         printf("SHA1 hash tests:\n");
 
-        sha1_context result = {};
+        sha1_context result;
         char *messagePtr = (char *)"";
-        char *targetDigest = {};
+        char *targetDigest = "";
 
         messagePtr = (char *)"a";
         targetDigest = (char *)"86f7e437faa5a7fce15d1ddcb9eaeaea377667b8";
