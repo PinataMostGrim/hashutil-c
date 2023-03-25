@@ -20,5 +20,5 @@ pushd %BuildFolder%
 
 :: Compile test runner
 del *.pdb > NUL 2> NUL
-cl %CompilerFlags% "..\src\hashutil.cpp" /link %LinkerFlags%
+cl %CompilerFlags% "..\src\hashutil.c" /link %LinkerFlags%
 popd

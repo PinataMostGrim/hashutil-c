@@ -1,6 +1,5 @@
 #include <string.h>
 
-#include "hashutil.h"
 #include "md5.h"
 #define HASHUTIL_SHA1_IMPLEMENTATION
 #include "sha1.h"
@@ -108,7 +107,8 @@ int main(int argc, char const *argv[])
     // Switch on algorithm selected
     if (strcmp(algorithmPtr, "md5") == 0)
     {
-        md5_context result = {};
+        md5_context result;
+        MD5InitializeContext(&result);
         if(fileFlag)
         {
             printf("Calculating MD5 hash for file \"%s\":\n", messagePtr);
@@ -124,7 +124,8 @@ int main(int argc, char const *argv[])
     }
     else if (strcmp(algorithmPtr, "sha1") == 0)
     {
-        sha1_context result = {};
+        sha1_context result;
+        SHA1InitializeContext(&result);
         if(fileFlag)
         {
             printf("Calculating SHA1 hash for file \"%s\":\n", messagePtr);
