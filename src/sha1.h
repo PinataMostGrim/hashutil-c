@@ -7,6 +7,7 @@
 #include <string.h>
 
 
+static uint32_t const SHA1_VERSION = 1;
 
 typedef struct sha1_context
 {
@@ -31,6 +32,7 @@ typedef struct sha1_context
 extern "C" {
 #endif
 
+static uint32_t SHA1_GetVersion();
 static sha1_context SHA1HashString(char *messagePtr);
 static sha1_context SHA1HashFile(const char *fileName);
 
@@ -58,6 +60,12 @@ static sha1_context SHA1HashFile(const char *fileName);
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+static uint32_t SHA1_GetVersion()
+{
+    uint32_t result = SHA1_VERSION;
+    return result;
+}
 
 static void SHA1InitializeContext(sha1_context *context)
 {
@@ -234,7 +242,6 @@ static void SHA1ConstructDigest(sha1_context *context)
 
 static sha1_context SHA1HashString(char *messagePtr)
 {
-
     sha1_context result;
     SHA1InitializeContext(&result);
     uint64_t byteCount = 0;

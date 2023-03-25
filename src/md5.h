@@ -11,6 +11,7 @@
 #define MD5_BUFFER_BYTE_SIZE 128
 #define MD5_CHUNK_BYTE_COUNT 64
 
+static uint32_t const MD5_VERSION = 1;
 
 typedef struct md5_context
 {
@@ -20,6 +21,12 @@ typedef struct md5_context
     char DigestStr[33];
 } md5_context;
 
+
+static uint32_t MD5_GetVersion()
+{
+    uint32_t result = MD5_VERSION;
+    return result;
+}
 
 internal void MD5InitializeContext(md5_context *context)
 {
