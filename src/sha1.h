@@ -2,10 +2,6 @@
 #define HASHUTIL_SHA1_H
 
 #include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdbool.h>
-
 
 static uint32_t const HASHUTIL_SHA1_VERSION = 1;
 
@@ -45,6 +41,9 @@ sha1_context SHA1HashFile(const char *fileName);
 
 #ifdef HASHUTIL_SHA1_IMPLEMENTATION
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdbool.h>
 #include <string.h>
 
 #if HASHUTIL_SLOW

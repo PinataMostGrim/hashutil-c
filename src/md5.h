@@ -2,9 +2,6 @@
 #define HASHUTIL_MD5_H
 
 #include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdbool.h>
 
 static uint32_t const HASHUTIL_MD5_VERSION = 1;
 
@@ -34,6 +31,10 @@ md5_context MD5HashFile(const char *fileName);
 
 
 #ifdef HASHUTIL_MD5_IMPLEMENTATION
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdbool.h>
 #include <string.h>
 
 #if HASHUTIL_SLOW
