@@ -6,7 +6,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
-static uint32_t const MD5_VERSION = 1;
+static uint32_t const HASHUTIL_MD5_VERSION = 1;
 
 typedef struct md5_context
 {
@@ -54,7 +54,7 @@ extern "C" {
 
 uint32_t MD5_GetVersion()
 {
-    uint32_t result = MD5_VERSION;
+    uint32_t result = HASHUTIL_MD5_VERSION;
     return result;
 }
 
