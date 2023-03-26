@@ -12,7 +12,7 @@ IF [%DEBUG%] == [1] (
 )
 
 set BuildFolder=bin
-set LinkerFlags=-opt:ref
+set LinkerFlags=-opt:ref -incremental:no
 
 :: Create build folder if it doesn't exist and change working directory
 IF NOT EXIST %BuildFolder% mkdir %BuildFolder%
@@ -20,5 +20,6 @@ pushd %BuildFolder%
 
 :: Compile test runner
 del *.pdb > NUL 2> NUL
+cl %CompilerFlags% -Tc "..\src\sha1.h" -DHASHUTIL_SHA1_IMPLEMENTATION -Fesha1.dll /link -DLL %LinkerFlags% -EXPORT:SHA1_GetVersion -EXPORT:SHA1HashString -EXPORT:SHA1HashFile
 cl %CompilerFlags% "..\src\hashutil.c" /link %LinkerFlags%
 popd
