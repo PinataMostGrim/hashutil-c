@@ -6,8 +6,7 @@
 #include "sha1.h"
 
 
-internal void
-PrintUsage()
+static void PrintUsage()
 {
     printf("usage: hashutil [-f] algorithm message\n\n");
     printf("Produces a message or file digest using various hashing algorithms.\n\n");
@@ -109,7 +108,6 @@ int main(int argc, char const *argv[])
     if (strcmp(algorithmPtr, "md5") == 0)
     {
         md5_context result;
-        MD5InitializeContext(&result);
         if(fileFlag)
         {
             printf("Calculating MD5 hash for file \"%s\":\n", messagePtr);
@@ -126,7 +124,6 @@ int main(int argc, char const *argv[])
     else if (strcmp(algorithmPtr, "sha1") == 0)
     {
         sha1_context result;
-        SHA1InitializeContext(&result);
         if(fileFlag)
         {
             printf("Calculating SHA1 hash for file \"%s\":\n", messagePtr);

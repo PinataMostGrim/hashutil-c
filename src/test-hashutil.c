@@ -6,8 +6,7 @@
 #include "sha1.h"
 
 
-internal void
-EvaluateResult(char *messagePtr, char *targetDigest, char *digestStr)
+static void EvaluateResult(char *messagePtr, char *targetDigest, char *digestStr)
 {
     if (strcmp(digestStr, targetDigest) == 0)
     {
