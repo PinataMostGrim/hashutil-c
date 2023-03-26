@@ -6,15 +6,13 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
-#include "hashutil.h"
-
 static uint32_t const MD5_VERSION = 1;
 
 typedef struct md5_context
 {
-    uint32 MessageLengthBits;
-    uint32 State[4];
-    uint8 Digest[16];
+    uint32_t MessageLengthBits;
+    uint32_t State[4];
+    uint8_t Digest[16];
     char DigestStr[33];
 } md5_context;
 
@@ -38,6 +36,14 @@ md5_context MD5HashFile(const char *fileName);
 #ifdef HASHUTIL_MD5_IMPLEMENTATION
 #include <string.h>
 
+#if HASHUTIL_SLOW
+#define MD5Assert(Expression) if (!(Expression)) {*(int *)0 = 0;}
+#else
+#define MD5Assert(Expression)
+#endif
+
+#define MD5ArrayCount(Array) (sizeof(Array) / sizeof((Array)[0]))
+
 #define MD5_BUFFER_BYTE_SIZE 128
 #define MD5_CHUNK_BYTE_COUNT 64
 
@@ -52,7 +58,7 @@ uint32_t MD5_GetVersion()
     return result;
 }
 
-internal void MD5InitializeContext(md5_context *context)
+static void MD5InitializeContext(md5_context *context)
 {
     context->MessageLengthBits = 0;
     context->State[0] = 0x67452301;
@@ -65,113 +71,137 @@ internal void MD5InitializeContext(md5_context *context)
 #endif
 }
 
+static void MD5MemoryCopy(const uint8_t *source, uint8_t *destination, size_t count)
+{
+    for (int i = 0; i < count; ++i)
+    {
+        *(destination + i) = *(source + i);
+    }
+}
+
+
+static void MD5MemoryZero(uint8_t *ptr, size_t count)
+{
+    for (int i = 0; i < count; ++i)
+    {
+        *(ptr + i) = 0;
+    }
+}
+
+
+static uint32_t MD5CircularBitShiftLeft(uint32_t value, uint8_t count)
+{
+    return (value << count) | (value >> (32-count));
+}
+
+
 // #define MD5AuxF(X, Y, Z) (((X) & (Y)) | ((~X) & (Z)))
-internal uint32 MD5AuxF(uint32 x, uint32 y, uint32 z)
+static uint32_t MD5AuxF(uint32_t x, uint32_t y, uint32_t z)
 {
     // Function F(X,Y,Z) = XY v not(X) Z
-    uint32 result = (x & y) | (~x & z);
+    uint32_t result = (x & y) | (~x & z);
     return result;
 }
 
 
 // #define MD5AuxG(X, Y, Z) (((X) & (Z)) | ((Y) & (~Z)))
-internal uint32 MD5AuxG(uint32 x, uint32 y, uint32 z)
+static uint32_t MD5AuxG(uint32_t x, uint32_t y, uint32_t z)
 {
     // Function G(X,Y,Z) = XZ v Y not(Z)
-    uint32 result = (x & z) | (y & ~z);
+    uint32_t result = (x & z) | (y & ~z);
     return result;
 }
 
 
 // #define MD5AuxH(X, Y, Z) ((X) ^ (Y) ^ (Z))
-internal uint32 MD5AuxH(uint32 x, uint32 y, uint32 z)
+static uint32_t MD5AuxH(uint32_t x, uint32_t y, uint32_t z)
 {
     // Function H(X,Y,Z) = X xor Y xor Z
-    uint32 result = (x ^ y ^ z);
+    uint32_t result = (x ^ y ^ z);
     return result;
 }
 
 
 // #define MD5AuxI(X, Y, Z) ((Y) ^ ((X) | (~Z)))
-internal uint32 MD5AuxI(uint32 x, uint32 y, uint32 z)
+static uint32_t MD5AuxI(uint32_t x, uint32_t y, uint32_t z)
 {
     // Function I(X,Y,Z) = Y xor (X v not(Z))
-    uint32 result = y ^ (x | ~z);
+    uint32_t result = y ^ (x | ~z);
     return result;
 }
 
 
-internal uint32 MD5TransformFF(uint32 A, uint32 B, uint32 C, uint32 D, uint32 X, uint8 S, uint32 T)
+static uint32_t MD5TransformFF(uint32_t A, uint32_t B, uint32_t C, uint32_t D, uint32_t X, uint8_t S, uint32_t T)
 {
     // a = b + ((a + F(b,c,d) + X[k] + T[i]) <<< s)
-    uint32 result = A + MD5AuxF(B, C, D) + X + T;
-    result = CircularBitShiftLeft(result, S);
+    uint32_t result = A + MD5AuxF(B, C, D) + X + T;
+    result = MD5CircularBitShiftLeft(result, S);
     return B + result;
 }
 
 
-internal uint32 MD5TransformGG(uint32 A, uint32 B, uint32 C, uint32 D, uint32 X, uint8 S, uint32 T)
+static uint32_t MD5TransformGG(uint32_t A, uint32_t B, uint32_t C, uint32_t D, uint32_t X, uint8_t S, uint32_t T)
 {
     // a = b + ((a + G(b,c,d) + X[k] + T[i]) <<< s)
-    uint32 result = A + MD5AuxG(B, C, D) + X + T;
-    result = CircularBitShiftLeft(result, S);
+    uint32_t result = A + MD5AuxG(B, C, D) + X + T;
+    result = MD5CircularBitShiftLeft(result, S);
     return B + result;
 }
 
 
-internal uint32 MD5TransformHH(uint32 A, uint32 B, uint32 C, uint32 D, uint32 X, uint8 S, uint32 T)
+static uint32_t MD5TransformHH(uint32_t A, uint32_t B, uint32_t C, uint32_t D, uint32_t X, uint8_t S, uint32_t T)
 {
     // a = b + ((a + H(b,c,d) + X[k] + T[i]) <<< s)
-    uint32 result = A + MD5AuxH(B, C, D) + X + T;
-    result = CircularBitShiftLeft(result, S);
+    uint32_t result = A + MD5AuxH(B, C, D) + X + T;
+    result = MD5CircularBitShiftLeft(result, S);
     return B + result;
 }
 
 
-internal uint32 MD5TransformII(uint32 A, uint32 B, uint32 C, uint32 D, uint32 X, uint8 S, uint32 T)
+static uint32_t MD5TransformII(uint32_t A, uint32_t B, uint32_t C, uint32_t D, uint32_t X, uint8_t S, uint32_t T)
 {
     // a = b + ((a + H(b,c,d) + X[k] + T[i]) <<< s)
-    uint32 result = A + MD5AuxI(B, C, D) + X + T;
-    result = CircularBitShiftLeft(result, S);
+    uint32_t result = A + MD5AuxI(B, C, D) + X + T;
+    result = MD5CircularBitShiftLeft(result, S);
     return B + result;
 }
 
 
-internal void MD5UpdateHash(md5_context *context, uint8 *ptr, uint32 byteCount)
+static void MD5UpdateHash(md5_context *context, uint8_t *ptr, uint32_t byteCount)
 {
     // Assert that the block length is divisible by 512 bits (64 bytes)
-    Assert(byteCount % 64 == 0);
+    MD5Assert(byteCount % 64 == 0);
 
     // Create 512-bit block
-    uint32 block[16];
+    uint32_t block[16];
 #if HASHUTIL_SLOW
     memset(block, 0, sizeof(block));
 #endif
 
     // Note (Aaron): Iterate over 512-bit (64 byte) blocks of the message.
     // 'i' represents the byte position in the message.
-    for (uint32 i = 0;
+    for (uint32_t i = 0;
          i < (byteCount);
          i+=64)
     {
         for (int j = 0; j < 16; ++j)
         {
             // Note (Aaron): This will work regardless of endianness
-            block[j] = (uint32)(*(ptr + i + (j * 4)))
-                | (uint32)(*(ptr + i + (j * 4) + 1) << 8)
-                | (uint32)(*(ptr + i + (j * 4) + 2) << 16)
-                | (uint32)(*(ptr + i + (j * 4) + 3) << 24);
+            block[j] = (uint32_t)(*(ptr + i + (j * 4)))
+                | (uint32_t)(*(ptr + i + (j * 4) + 1) << 8)
+                | (uint32_t)(*(ptr + i + (j * 4) + 2) << 16)
+                | (uint32_t)(*(ptr + i + (j * 4) + 3) << 24);
 
             // Note (Aaron): This will only work on little-endian systems (with no alignment restrictions)
-            // uint32 endianness = 0xdeadbeef;
-            // Assert((*(unsigned char *)&endianness) == 0xef)
-            // block[j] = *(uint32 *)((context->MessagePtr + i + (j * 4)));
+            // uint32_t endianness = 0xdeadbeef;
+            // MD5Assert((*(unsigned char *)&endianness) == 0xef)
+            // block[j] = *(uint32_t *)((context->MessagePtr + i + (j * 4)));
         }
 
-        uint32 A = context->State[0];
-        uint32 B = context->State[1];
-        uint32 C = context->State[2];
-        uint32 D = context->State[3];
+        uint32_t A = context->State[0];
+        uint32_t B = context->State[1];
+        uint32_t C = context->State[2];
+        uint32_t D = context->State[3];
 
         // Perform MD5 transformations
         // Round 1
@@ -265,32 +295,37 @@ internal void MD5UpdateHash(md5_context *context, uint8 *ptr, uint32 byteCount)
     }
 
     // Zero out block[] to prevent sensitive information being left in memory
-    MemoryZero((uint8 *)&block, ArrayCount(block));
+    MD5MemoryZero((uint8_t *)&block, MD5ArrayCount(block));
 }
 
 
-internal void MD5ConstructDigest(md5_context *context)
+static void MD5ConstructDigest(md5_context *context)
 {
     // Extract digest values, convert to string, and store in context
     unsigned int i, j;
     for (i = 0, j = 0; i < 4; ++i, j+=4)
     {
-        context->Digest[j] = (uint8)(context->State[i] & 0xff);
-        context->Digest[j+1] = (uint8)((context->State[i] >> 8) & 0xff);
-        context->Digest[j+2] = (uint8)((context->State[i] >> 16) & 0xff);
-        context->Digest[j+3] = (uint8)((context->State[i] >> 24) & 0xff);
+        context->Digest[j] = (uint8_t)(context->State[i] & 0xff);
+        context->Digest[j+1] = (uint8_t)((context->State[i] >> 8) & 0xff);
+        context->Digest[j+2] = (uint8_t)((context->State[i] >> 16) & 0xff);
+        context->Digest[j+3] = (uint8_t)((context->State[i] >> 24) & 0xff);
 
-        sprintf(context->DigestStr + (j*2),"%02x%02x%02x%02x", context->Digest[j], context->Digest[j+1], context->Digest[j+2], context->Digest[i*4+3]);
+        sprintf(context->DigestStr + (j*2),
+                "%02x%02x%02x%02x",
+                context->Digest[j],
+                context->Digest[j+1],
+                context->Digest[j+2],
+                context->Digest[i*4+3]);
     }
 }
 
 
-internal md5_context MD5HashString(char *messagePtr)
+md5_context MD5HashString(char *messagePtr)
 {
     md5_context result;
     MD5InitializeContext(&result);
 
-    uint32 byteCount = 0;
+    uint32_t byteCount = 0;
 
     while (*messagePtr != 0x00)
     {
@@ -300,7 +335,7 @@ internal md5_context MD5HashString(char *messagePtr)
 
         if(byteCount == MD5_CHUNK_BYTE_COUNT)
         {
-            MD5UpdateHash(&result, (uint8 *)(messagePtr - byteCount), byteCount);
+            MD5UpdateHash(&result, (uint8_t *)(messagePtr - byteCount), byteCount);
             byteCount = 0;
         }
     }
@@ -308,24 +343,24 @@ internal md5_context MD5HashString(char *messagePtr)
     // Allocate memory to store the message remainder + padding + encoded message length
     // We use a buffer length of 1024 bits to cover the worst case scenario,
     // where the length of the message remainder is between 477 and 512 bits.
-    uint8 buffer[MD5_BUFFER_BYTE_SIZE];
+    uint8_t buffer[MD5_BUFFER_BYTE_SIZE];
 #if HASHUTIL_SLOW
     memset(buffer, 0, sizeof(buffer));
 #endif
-    uint8 *bufferPtr = buffer;
+    uint8_t *bufferPtr = buffer;
     bool useExtendedMargine = (byteCount >= (MD5_CHUNK_BYTE_COUNT - 8));
 
     // Copy message remainder into the buffer
-    Assert(byteCount < MD5_BUFFER_BYTE_SIZE);
-    MemoryCopy((uint8 *)(messagePtr - byteCount), bufferPtr, byteCount);
+    MD5Assert(byteCount < MD5_BUFFER_BYTE_SIZE);
+    MD5MemoryCopy((uint8_t *)(messagePtr - byteCount), bufferPtr, byteCount);
 
     // Apply padded 1
-    uint8 *paddingPtr = bufferPtr + byteCount;
+    uint8_t *paddingPtr = bufferPtr + byteCount;
     *paddingPtr = (1 << 7);
     paddingPtr++;
 
     // Apply padded 0s
-    uint8 *paddingEndPtr = useExtendedMargine
+    uint8_t *paddingEndPtr = useExtendedMargine
         ? bufferPtr + MD5_BUFFER_BYTE_SIZE - 8
         : bufferPtr + MD5_CHUNK_BYTE_COUNT - 8;
 
@@ -336,16 +371,16 @@ internal md5_context MD5HashString(char *messagePtr)
     }
 
     // Append the length of the message as a 64-bit representation
-    uint64 *sizePtr = (uint64 *)paddingPtr;
-    *sizePtr = (uint64)result.MessageLengthBits;
+    uint64_t *sizePtr = (uint64_t *)paddingPtr;
+    *sizePtr = (uint64_t)result.MessageLengthBits;
 
     // Perform final hash update
     byteCount = useExtendedMargine ? MD5_BUFFER_BYTE_SIZE : MD5_CHUNK_BYTE_COUNT;
-    Assert(byteCount == (paddingPtr - bufferPtr) + sizeof(uint64));
+    MD5Assert(byteCount == (paddingPtr - bufferPtr) + sizeof(uint64_t));
     MD5UpdateHash(&result, bufferPtr, byteCount);
 
     // Zero out message remainder to prevent sensitive information being left in memory
-    MemoryZero(bufferPtr, byteCount);
+    MD5MemoryZero(bufferPtr, byteCount);
 
     // Calculate hash and return
     MD5ConstructDigest(&result);
@@ -354,17 +389,17 @@ internal md5_context MD5HashString(char *messagePtr)
 }
 
 
-internal md5_context MD5HashFile(const char *fileName)
+md5_context MD5HashFile(const char *fileName)
 {
     // Note (Aaron): Read the file in 64 byte chunks but allocate 128 bytes in case
     // we need an extended margine when padding the end of the file. 64 byte chunks are
     // used as this is the size of blocks MD5 processes at one time.
-    uint8 buffer[MD5_BUFFER_BYTE_SIZE];
+    uint8_t buffer[MD5_BUFFER_BYTE_SIZE];
 #if HASHUTIL_SLOW
     memset(buffer, 0, sizeof(buffer));
 #endif
     size_t bytesRead;
-    uint32 byteCount = 0;
+    uint32_t byteCount = 0;
 
     FILE *file = fopen(fileName, "rb");
     if(!file)
@@ -375,19 +410,19 @@ internal md5_context MD5HashFile(const char *fileName)
 
     md5_context result;
     MD5InitializeContext(&result);
-    uint8 *bufferPtr = buffer;
+    uint8_t *bufferPtr = buffer;
     size_t readElementSize = 1;
-    size_t readBlockSize = sizeof(uint8) * MD5_CHUNK_BYTE_COUNT;
+    size_t readBlockSize = sizeof(uint8_t) * MD5_CHUNK_BYTE_COUNT;
 
     // Update hash using file contents until we run out of chunks of sufficient size
     bytesRead = fread(buffer, readElementSize, readBlockSize, file);
     while(bytesRead)
     {
-        Assert(bytesRead <= MD5_CHUNK_BYTE_COUNT);
-        result.MessageLengthBits += ((uint32)bytesRead * 8);
+        MD5Assert(bytesRead <= MD5_CHUNK_BYTE_COUNT);
+        result.MessageLengthBits += ((uint32_t)bytesRead * 8);
         // Note (Aaron): Hashes are updated using 'byteCount' rather than 'bytesRead' as
         // 'bytesRead' will be 0 after exiting the loop.
-        byteCount = (uint32)bytesRead;
+        byteCount = (uint32_t)bytesRead;
 
         if (byteCount == MD5_CHUNK_BYTE_COUNT)
         {
@@ -414,12 +449,12 @@ internal md5_context MD5HashFile(const char *fileName)
     bool useExtendedMargine = (byteCount >= (MD5_CHUNK_BYTE_COUNT - 8));
 
     // Apply padded 1
-    uint8 *paddingPtr = bufferPtr + byteCount;
+    uint8_t *paddingPtr = bufferPtr + byteCount;
     *paddingPtr = (1 << 7);
     paddingPtr++;
 
     // Apply padded 0s
-    uint8 *paddingEndPtr = useExtendedMargine
+    uint8_t *paddingEndPtr = useExtendedMargine
         ? bufferPtr + MD5_BUFFER_BYTE_SIZE - 8
         : bufferPtr + MD5_CHUNK_BYTE_COUNT - 8;
 
@@ -430,16 +465,16 @@ internal md5_context MD5HashFile(const char *fileName)
     }
 
     // Append the length of the message as a 64-bit representation
-    uint64 *sizePtr = (uint64 *)paddingPtr;
-    *sizePtr = (uint64)result.MessageLengthBits;
+    uint64_t *sizePtr = (uint64_t *)paddingPtr;
+    *sizePtr = (uint64_t)result.MessageLengthBits;
 
     // Perform final hash update
     byteCount = useExtendedMargine ? MD5_BUFFER_BYTE_SIZE : MD5_CHUNK_BYTE_COUNT;
-    Assert(byteCount == (paddingPtr - bufferPtr) + sizeof(uint64));
+    MD5Assert(byteCount == (paddingPtr - bufferPtr) + sizeof(uint64_t));
     MD5UpdateHash(&result, bufferPtr, byteCount);
 
     // Zero out buffer to prevent santize potentially sensitive information
-    MemoryZero(bufferPtr, byteCount);
+    MD5MemoryZero(bufferPtr, byteCount);
 
     // Calculate hash and return
     MD5ConstructDigest(&result);
