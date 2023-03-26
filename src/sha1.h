@@ -28,7 +28,7 @@ typedef struct sha1_context
 extern "C" {
 #endif
 
-uint32_t SHA1_GetVersion();
+uint32_t SHA1GetVersion();
 sha1_context SHA1HashString(char *messagePtr);
 sha1_context SHA1HashFile(const char *fileName);
 
@@ -63,7 +63,7 @@ sha1_context SHA1HashFile(const char *fileName);
 extern "C" {
 #endif
 
-uint32_t SHA1_GetVersion()
+uint32_t SHA1GetVersion()
 {
     uint32_t result = HASHUTIL_SHA1_VERSION;
     return result;
