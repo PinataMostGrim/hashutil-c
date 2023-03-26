@@ -35,7 +35,9 @@ md5_context MD5HashFile(const char *fileName);
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#if HASHUTIL_SLOW
 #include <string.h>
+#endif
 
 #if HASHUTIL_SLOW
 #define MD5Assert(Expression) if (!(Expression)) {*(int *)0 = 0;}

@@ -37,6 +37,7 @@ sha1_context SHA1HashFile(const char *fileName);
 #endif
 
 #endif // HASHUTIL_SHA1_H
+// end of header file ////////////////////////////////////////////////////////
 
 
 #ifdef HASHUTIL_SHA1_IMPLEMENTATION
@@ -44,7 +45,9 @@ sha1_context SHA1HashFile(const char *fileName);
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#if HASHUTIL_SLOW
 #include <string.h>
+#endif
 
 #if HASHUTIL_SLOW
 #define SHA1Assert(Expression) if (!(Expression)) {*(int *)0 = 0;}
