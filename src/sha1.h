@@ -2,13 +2,8 @@
 #define HASHUTIL_SHA1_H
 
 #include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdbool.h>
-#include <string.h>
 
-
-static uint32_t const SHA1_VERSION = 1;
+static uint32_t const HASHUTIL_SHA1_VERSION = 1;
 
 typedef struct sha1_context
 {
@@ -42,11 +37,17 @@ sha1_context SHA1HashFile(const char *fileName);
 #endif
 
 #endif // HASHUTIL_SHA1_H
+// end of header file ////////////////////////////////////////////////////////
 
 
 #ifdef HASHUTIL_SHA1_IMPLEMENTATION
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdbool.h>
+#if HASHUTIL_SLOW
 #include <string.h>
+#endif
 
 #if HASHUTIL_SLOW
 #define SHA1Assert(Expression) if (!(Expression)) {*(int *)0 = 0;}
@@ -64,7 +65,7 @@ extern "C" {
 
 uint32_t SHA1_GetVersion()
 {
-    uint32_t result = SHA1_VERSION;
+    uint32_t result = HASHUTIL_SHA1_VERSION;
     return result;
 }
 

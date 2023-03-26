@@ -1,12 +1,12 @@
 #include <string.h>
 
+#define HASHUTIL_MD5_IMPLEMENTATION
 #include "md5.h"
 #define HASHUTIL_SHA1_IMPLEMENTATION
 #include "sha1.h"
 
 
-internal void
-EvaluateResult(char *messagePtr, char *targetDigest, char *digestStr)
+static void EvaluateResult(char *messagePtr, char *targetDigest, char *digestStr)
 {
     if (strcmp(digestStr, targetDigest) == 0)
     {
