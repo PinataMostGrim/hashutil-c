@@ -1,15 +1,12 @@
 #ifndef HASHUTIL_MD5_H
 #define HASHUTIL_MD5_H
 
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include <stdbool.h>
 
 #include "hashutil.h"
-
-#define MD5_BUFFER_BYTE_SIZE 128
-#define MD5_CHUNK_BYTE_COUNT 64
 
 static uint32_t const MD5_VERSION = 1;
 
@@ -22,7 +19,24 @@ typedef struct md5_context
 } md5_context;
 
 
-static uint32_t MD5_GetVersion()
+
+uint32_t MD5_GetVersion();
+md5_context MD5HashString(char *messagePtr);
+md5_context MD5HashFile(const char *fileName);
+
+
+#endif // HASHUTIL_MD5_H
+// end of header file ////////////////////////////////////////////////////////
+
+
+#ifdef HASHUTIL_MD5_IMPLEMENTATION
+#include <string.h>
+
+#define MD5_BUFFER_BYTE_SIZE 128
+#define MD5_CHUNK_BYTE_COUNT 64
+
+
+uint32_t MD5_GetVersion()
 {
     uint32_t result = MD5_VERSION;
     return result;
@@ -423,4 +437,4 @@ internal md5_context MD5HashFile(const char *fileName)
     return result;
 }
 
-#endif
+#endif // HASHUTIL_MD5_IMPLEMENTATION
