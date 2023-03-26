@@ -18,7 +18,7 @@ typedef struct md5_context
 extern "C" {
 #endif
 
-uint32_t MD5_GetVersion();
+uint32_t MD5GetVersion();
 md5_context MD5HashString(char *messagePtr);
 md5_context MD5HashFile(const char *fileName);
 
@@ -55,7 +55,7 @@ md5_context MD5HashFile(const char *fileName);
 extern "C" {
 #endif
 
-uint32_t MD5_GetVersion()
+uint32_t MD5GetVersion()
 {
     uint32_t result = HASHUTIL_MD5_VERSION;
     return result;
