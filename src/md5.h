@@ -19,11 +19,17 @@ typedef struct md5_context
 } md5_context;
 
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 uint32_t MD5_GetVersion();
 md5_context MD5HashString(char *messagePtr);
 md5_context MD5HashFile(const char *fileName);
 
+#ifdef __cplusplus
+}
+#endif
 
 #endif // HASHUTIL_MD5_H
 // end of header file ////////////////////////////////////////////////////////
@@ -35,6 +41,10 @@ md5_context MD5HashFile(const char *fileName);
 #define MD5_BUFFER_BYTE_SIZE 128
 #define MD5_CHUNK_BYTE_COUNT 64
 
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 uint32_t MD5_GetVersion()
 {
@@ -436,5 +446,9 @@ internal md5_context MD5HashFile(const char *fileName)
 
     return result;
 }
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // HASHUTIL_MD5_IMPLEMENTATION
