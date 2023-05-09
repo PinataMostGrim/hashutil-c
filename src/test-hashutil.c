@@ -90,6 +90,10 @@ int main()
         char *messagePtr = (char *)"";
         char *targetDigest = "";
 
+        targetDigest = (char *)"da39a3ee5e6b4b0d3255bfef95601890afd80709";
+        result = SHA1HashString(messagePtr);
+        EvaluateResult(messagePtr, targetDigest, result.DigestStr);
+
         messagePtr = (char *)"a";
         targetDigest = (char *)"86f7e437faa5a7fce15d1ddcb9eaeaea377667b8";
         result = SHA1HashString(messagePtr);
@@ -148,6 +152,10 @@ int main()
         sha2_256_context result;
         char *messagePtr = (char *)"";
         char *targetDigest = "";
+
+        targetDigest = (char *)"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855";
+        result = SHA2_HashStringSHA256(messagePtr, SHA2_SHA256_256);
+        EvaluateResult(messagePtr, targetDigest, result.DigestStr);
 
         messagePtr = (char *)"abc";
         targetDigest = (char *)"ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad";
