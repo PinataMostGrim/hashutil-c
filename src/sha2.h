@@ -65,9 +65,6 @@ sha2_256_context SHA2_HashStringSHA256(char *messagePtr, sha256_digest_length di
 #include <stdio.h>
 #include <stdbool.h>
 #include "common.c"
-#if HASHUTIL_SLOW
-#include <string.h>
-#endif
 
 #define SHA2_SHA256_MESSAGE_STORAGE_SIZE_BYTES 8    // 64 bits
 #define SHA2_SHA256_BLOCK_SIZE_BYTES 64             // 512 bits
@@ -97,7 +94,7 @@ static void SHA2_InitializeSHA224Context(sha2_256_context *context)
     context->H[7] = 0xbefa4fa4;
 
 #if HASHUTIL_SLOW
-    memset(context->DigestStr, 0, sizeof(context->DigestStr));
+    MemorySet((uint8_t *)context->DigestStr, 0, sizeof(context->DigestStr));
 #endif
 }
 
@@ -115,7 +112,7 @@ static void SHA2_InitializeSHA256Context(sha2_256_context *context)
     context->H[7] = 0x5be0cd19;
 
 #if HASHUTIL_SLOW
-    memset(context->DigestStr, 0, sizeof(context->DigestStr));
+    MemorySet((uint8_t *)context->DigestStr, 0, sizeof(context->DigestStr));
 #endif
 }
 
@@ -167,7 +164,7 @@ void SHA2_ApplyPaddingToMessageBlock(uint8_t *blockPtr, uint32_t blockSize,
 
 #if HASHUTIL_SLOW
     // Note (Aaron): Useful for debug purposes to pack the buffer's bits with 1s
-    memset(blockPtr, 0xff, blockSize);
+    MemorySet((uint8_t *)blockPtr, 0xff, blockSize);
 #endif
 
     uint32_t messageBlockSize = blockSize / 2;
@@ -223,7 +220,7 @@ static void SHA2_UpdateSHA256Hash(sha2_256_context *context, uint8_t *messagePtr
 
     uint32_t W[64];
 #if HASHUTIL_SLOW
-    memset(W, 0, sizeof(W));
+    MemorySet((uint8_t *)W, 0, sizeof(W));
 #endif
 
     uint32_t t1 = 0;

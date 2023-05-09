@@ -32,6 +32,16 @@ static void *MemoryCopy(void *destPtr, void const *sourcePtr, size_t size)
     return destPtr;
 }
 
+static void *MemorySet(uint8_t *destPtr, int c, size_t count)
+{
+    Assert(count > 0);
+
+    unsigned char *dest = (unsigned char *)destPtr;
+    while(count--) *dest++ = (unsigned char)c;
+
+    return destPtr;
+}
+
 // Swap endianness of 64 bit value
 static void MirrorBits64(uint64_t *bits)
 {
