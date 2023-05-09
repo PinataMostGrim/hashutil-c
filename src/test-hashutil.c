@@ -1,9 +1,12 @@
 #include <string.h>
+#include <stdio.h>
 
 #define HASHUTIL_MD5_IMPLEMENTATION
 #include "md5.h"
 #define HASHUTIL_SHA1_IMPLEMENTATION
 #include "sha1.h"
+#define HASHUTIL_SHA2_IMPLEMENTATION
+#include "sha2.h"
 
 
 static void EvaluateResult(char *messagePtr, char *targetDigest, char *digestStr)
@@ -15,7 +18,8 @@ static void EvaluateResult(char *messagePtr, char *targetDigest, char *digestStr
     else
     {
         printf("FAILED: '%s'\n", messagePtr);
-        printf("\tExpected '%s' but received '%s'\n", targetDigest, digestStr);
+        printf("\tExpected:\t%s\n", targetDigest);
+        printf("\tReceived:\t%s\n", digestStr);
     }
 }
 
@@ -133,6 +137,32 @@ int main()
         EvaluateResult(fileNamePtr, targetDigest, result.DigestStr);
 
         printf("\n");
+    }
+#endif
+
+    // Note (Aaron): SHA2 Tests
+#if 1
+    {
+        printf("SHA256 hash tests:\n");
+
+        sha2_256_context result;
+        char *messagePtr = (char *)"";
+        char *targetDigest = "";
+
+        messagePtr = (char *)"abc";
+        targetDigest = (char *)"ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad";
+        result = SHA2_HashStringSHA256(messagePtr);
+        EvaluateResult(messagePtr, targetDigest, result.DigestStr);
+
+        messagePtr = (char *)"abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq";
+        targetDigest = (char *)"248d6a61d20638b8e5c026930c3e6039a33ce45964ff2167f6ecedd419db06c1";
+        result = SHA2_HashStringSHA256(messagePtr);
+        EvaluateResult(messagePtr, targetDigest, result.DigestStr);
+
+        messagePtr = (char *)"The quick brown fox jumps over the lazy dog over and over and over and over and over and over and over and over and over again";
+        targetDigest = (char *)"5e471d49eef9c7f859044d9ef2d31175d94384953f842ba02e20e06b77946408";
+        result = SHA2_HashStringSHA256(messagePtr);
+        EvaluateResult(messagePtr, targetDigest, result.DigestStr);
     }
 #endif
 
