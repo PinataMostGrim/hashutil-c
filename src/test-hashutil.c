@@ -151,18 +151,43 @@ int main()
 
         messagePtr = (char *)"abc";
         targetDigest = (char *)"ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad";
-        result = SHA2_HashStringSHA256(messagePtr);
+        result = SHA2_HashStringSHA256(messagePtr, SHA2_SHA256_256);
         EvaluateResult(messagePtr, targetDigest, result.DigestStr);
 
         messagePtr = (char *)"abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq";
         targetDigest = (char *)"248d6a61d20638b8e5c026930c3e6039a33ce45964ff2167f6ecedd419db06c1";
-        result = SHA2_HashStringSHA256(messagePtr);
+        result = SHA2_HashStringSHA256(messagePtr, SHA2_SHA256_256);
         EvaluateResult(messagePtr, targetDigest, result.DigestStr);
 
         messagePtr = (char *)"The quick brown fox jumps over the lazy dog over and over and over and over and over and over and over and over and over again";
         targetDigest = (char *)"5e471d49eef9c7f859044d9ef2d31175d94384953f842ba02e20e06b77946408";
-        result = SHA2_HashStringSHA256(messagePtr);
+        result = SHA2_HashStringSHA256(messagePtr, SHA2_SHA256_256);
         EvaluateResult(messagePtr, targetDigest, result.DigestStr);
+
+        printf("\n");
+
+        printf("SHA224 hash tests:\n");
+
+        messagePtr = (char *)"";
+        targetDigest = (char *)"d14a028c2a3a2bc9476102bb288234c415a2b01f828ea62ac5b3e42f";
+        result = SHA2_HashStringSHA256(messagePtr, SHA2_SHA256_224);
+        EvaluateResult(messagePtr, targetDigest, result.DigestStr);
+
+        messagePtr = (char *)"abc";
+        targetDigest = (char *)"23097d223405d8228642a477bda255b32aadbce4bda0b3f7e36c9da7";
+        result = SHA2_HashStringSHA256(messagePtr, SHA2_SHA256_224);
+        EvaluateResult(messagePtr, targetDigest, result.DigestStr);
+
+        messagePtr = (char *)"abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq";
+        targetDigest = (char *)"75388b16512776cc5dba5da1fd890150b0c6455cb4f58b1952522525";
+        result = SHA2_HashStringSHA256(messagePtr, SHA2_SHA256_224);
+        EvaluateResult(messagePtr, targetDigest, result.DigestStr);
+
+        messagePtr = (char *)"The quick brown fox jumps over the lazy dog over and over and over and over and over and over and over and over and over again";
+        targetDigest = (char *)"9e04184fee6c5497488121d85dd19df057a05aae5e1bac5a17789fe8";
+        result = SHA2_HashStringSHA256(messagePtr, SHA2_SHA256_224);
+        EvaluateResult(messagePtr, targetDigest, result.DigestStr);
+
     }
 #endif
 

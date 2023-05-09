@@ -39,12 +39,18 @@ typedef struct sha2_256_context
 
 } sha2_256_context;
 
+typedef enum sha256_digest_length
+{
+    SHA2_SHA256_224,
+    SHA2_SHA256_256,
+} sha256_digest_length;
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 uint32_t SHA2_GetVersion();
-sha2_256_context SHA2_HashStringSHA256(char *messagePtr);
+sha2_256_context SHA2_HashStringSHA256(char *messagePtr, sha256_digest_length digestLength);
 
 #ifdef __cplusplus
 }
@@ -75,6 +81,24 @@ uint32_t SHA2_GetVersion()
 {
     uint32_t result = HASHUTIL_SHA2_VERSION;
     return result;
+}
+
+static void SHA2_InitializeSHA224Context(sha2_256_context *context)
+{
+    context->MessageLengthBits = 0;
+
+    context->H[0] = 0xc1059ed8;
+    context->H[1] = 0x367cd507;
+    context->H[2] = 0x3070dd17;
+    context->H[3] = 0xf70e5939;
+    context->H[4] = 0xffc00b31;
+    context->H[5] = 0x68581511;
+    context->H[6] = 0x64f98fa7;
+    context->H[7] = 0xbefa4fa4;
+
+#if HASHUTIL_SLOW
+    memset(context->DigestStr, 0, sizeof(context->DigestStr));
+#endif
 }
 
 static void SHA2_InitializeSHA256Context(sha2_256_context *context)
@@ -131,6 +155,55 @@ uint32_t SSIG1(uint32_t x)
     return ROTR(x, 17) ^ ROTR(x, 19) ^ (x >> 10);
 }
 
+void SHA2_ApplyPaddingToMessageBlock(uint8_t *blockPtr, uint32_t blockSize,
+                               char *messagePtr, uint64_t byteCount,
+                               uint32_t messageLenthEncodingSize, uint64_t messageLengthBits)
+{
+    // We are expecting a buffer that can hold up to two message blocks
+    Assert(blockSize % 2 == 0);
+
+    // Message + padding + message length bits need to fit within the buffer
+    Assert(byteCount <= blockSize - messageLenthEncodingSize - 1);
+
+#if HASHUTIL_SLOW
+    // Note (Aaron): Useful for debug purposes to pack the buffer's bits with 1s
+    memset(blockPtr, 0xff, blockSize);
+#endif
+
+    uint32_t messageBlockSize = blockSize / 2;
+    bool useFullBuffer = byteCount > (messageBlockSize - messageLenthEncodingSize - 1);
+
+    // Apply the final hash update with padding
+    // Copy message remainder (if any) into buffer
+    if (byteCount > 0)
+    {
+        MemoryCopy(blockPtr, (uint8_t *)(messagePtr - byteCount), byteCount);
+    }
+
+    // Apply padded 1
+    uint8_t *paddingPtr = blockPtr + byteCount;
+    *paddingPtr++ = (1 << 7);
+
+    // Apply padded 0s
+    uint8_t *paddingEndPtr = blockPtr + ((useFullBuffer ? 2 : 1) * messageBlockSize) - messageLenthEncodingSize;
+
+    while (paddingPtr < paddingEndPtr)
+    {
+        *paddingPtr++ = 0;
+    }
+
+    // Append length of message as a 64-bit number (in big endian)
+    uint64_t *sizePtr = (uint64_t *)paddingPtr;
+    uint64_t messageLength64 = messageLengthBits;
+
+    if (IsSystemLittleEndian())
+    {
+        MirrorBits64(&messageLength64);
+    }
+
+    *sizePtr = messageLength64;
+}
+
 static void SHA2_UpdateSHA256Hash(sha2_256_context *context, uint8_t *messagePtr, uint64_t byteCount)
 {
     // Assert that the message is divisible by 512-bits (64 bytes)
@@ -162,6 +235,8 @@ static void SHA2_UpdateSHA256Hash(sha2_256_context *context, uint8_t *messagePtr
         // 16 words == 64 bytes == 512 bits
         for (int j = 0; j < 16; ++j)
         {
+            // Convert from memory-order to message order. SHA256 is processed in 32bit words.
+            // If it used 8-bit blocks, there would be no need to re-order the message chunks.
             W[j] = (uint32_t)(*(messagePtr + i + (j * 4)) << 24)
                  | (uint32_t)(*(messagePtr + i + (j * 4) + 1) << 16)
                  | (uint32_t)(*(messagePtr + i + (j * 4) + 2) << 8)
@@ -212,8 +287,29 @@ static void SHA2_UpdateSHA256Hash(sha2_256_context *context, uint8_t *messagePtr
     }
 }
 
+static void SHA2_ConstructSHA224Digest(sha2_256_context *context)
+{
+    // Assert buffer is large enough to hold a SHA224 digest
+    // 224 bits in hex, plus the string null terminator character
+    Assert(ArrayCount(context->DigestStr) >= (224 / 4 + 1))
+
+    sprintf(context->DigestStr,
+            "%08x%08x%08x%08x%08x%08x%08x",
+            context->H[0],
+            context->H[1],
+            context->H[2],
+            context->H[3],
+            context->H[4],
+            context->H[5],
+            context->H[6]);
+}
+
 static void SHA2_ConstructSHA256Digest(sha2_256_context *context)
 {
+    // Assert buffer is large enough to hold a SHA256 digest
+    // 256 bits in hex, plus the string null terminator character
+    Assert(ArrayCount(context->DigestStr) >= (256 / 4 + 1));
+
     sprintf(context->DigestStr,
             "%08x%08x%08x%08x%08x%08x%08x%08x",
             context->H[0],
@@ -226,60 +322,26 @@ static void SHA2_ConstructSHA256Digest(sha2_256_context *context)
             context->H[7]);
 }
 
-void SHA2_ApplyPaddingToMessageBlock(uint8_t *blockPtr, uint32_t blockSize,
-                               char *messagePtr, uint64_t byteCount,
-                               uint32_t messageLenthEncodingSize, uint64_t messageLengthBits)
+sha2_256_context SHA2_HashStringSHA256(char *messagePtr, sha256_digest_length digestLength)
 {
-    // We are expecting a buffer that can hold up to two message blocks
-    Assert(blockSize % 2 == 0);
 
-    // Message + padding + message length bits need to fit within the buffer
-    Assert(byteCount <= blockSize - messageLenthEncodingSize - 1);
-
-#if HASHUTIL_SLOW
-    // Note (Aaron): Useful for debug purposes to pack the buffer's bits with 1s
-    memset(blockPtr, 0xff, blockSize);
-#endif
-
-    uint32_t messageBlockSize = blockSize / 2;
-    bool useFullBuffer = byteCount > (messageBlockSize - messageLenthEncodingSize - 1);
-
-    // Apply the final hash update with padding
-    // Copy message remainder (if any) into buffer
-    if (byteCount > 0)
-    {
-        MemoryCopy(blockPtr, (uint8_t *)(messagePtr - byteCount), byteCount);
-    }
-
-    // Apply padded 1
-    uint8_t *paddingPtr = blockPtr + byteCount;
-    *paddingPtr++ = (1 << 7);
-
-    // Apply padded 0s
-    uint8_t *paddingEndPtr = blockPtr + ((useFullBuffer ? 2 : 1) * messageBlockSize) - messageLenthEncodingSize;
-
-    while (paddingPtr < paddingEndPtr)
-    {
-        *paddingPtr++ = 0;
-    }
-
-    // Append length of message as a 64-bit number (in big endian)
-    uint64_t *sizePtr = (uint64_t *)paddingPtr;
-    uint64_t messageLength64 = messageLengthBits;
-
-    if (IsSystemLittleEndian())
-    {
-        MirrorBits64(&messageLength64);
-    }
-
-    *sizePtr = messageLength64;
-}
-
-sha2_256_context SHA2_HashStringSHA256(char *messagePtr)
-{
     sha2_256_context context;
     uint64_t byteCount = 0;
-    SHA2_InitializeSHA256Context(&context);
+
+    switch (digestLength)
+    {
+        case SHA2_SHA256_224:
+        {
+            SHA2_InitializeSHA224Context(&context);
+            break;
+        }
+        case SHA2_SHA256_256:
+        default:
+        {
+            SHA2_InitializeSHA256Context(&context);
+            break;
+        }
+    }
 
     while (*messagePtr != 0x00)
     {
@@ -309,8 +371,20 @@ sha2_256_context SHA2_HashStringSHA256(char *messagePtr)
 
     SHA2_UpdateSHA256Hash(&context, (uint8_t *)buffer, byteCount);
 
-    SHA2_ConstructSHA256Digest(&context);
-    return context;
+    switch (digestLength)
+    {
+        case SHA2_SHA256_224:
+        {
+            SHA2_ConstructSHA224Digest(&context);
+            return context;
+        }
+        case SHA2_SHA256_256:
+        default:
+        {
+            SHA2_ConstructSHA256Digest(&context);
+            return context;
+        }
+    }
 }
 
 #ifdef __cplusplus
