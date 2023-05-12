@@ -207,25 +207,50 @@ int main()
         char *messagePtr = (char *)"";
         char *targetDigest = "";
 
+        printf("SHA384 hash tests:\n");
+
+        messagePtr = (char *)"";
+        targetDigest = (char *)"38b060a751ac96384cd9327eb1b1e36a21fdb71114be07434c0cc7bf63f6e1da274edebfe76f65fbd51ad2f14898b95b";
+        result = SHA2_HashStringSHA512(messagePtr, SHA2_SHA512_384);
+        EvaluateResult(messagePtr, targetDigest, result.DigestStr);
+
+        messagePtr = (char *)"abc";
+        targetDigest = (char *)"cb00753f45a35e8bb5a03d699ac65007272c32ab0eded1631a8b605a43ff5bed8086072ba1e7cc2358baeca134c825a7";
+        result = SHA2_HashStringSHA512(messagePtr, SHA2_SHA512_384);
+        EvaluateResult(messagePtr, targetDigest, result.DigestStr);
+
+        messagePtr = (char *)"abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq";
+        targetDigest = (char *)"3391fdddfc8dc7393707a65b1b4709397cf8b1d162af05abfe8f450de5f36bc6b0455a8520bc4e6f5fe95b1fe3c8452b";
+        result = SHA2_HashStringSHA512(messagePtr, SHA2_SHA512_384);
+        EvaluateResult(messagePtr, targetDigest, result.DigestStr);
+
+        messagePtr = (char *)"The quick brown fox jumps over the lazy dog over and over and over and over and over and over and over and over and over again";
+        targetDigest = (char *)"b61ef81dbf2a0259a020a63fc2cd210c7d415432c456c9467557debe31394a8c6633dfcf89e48474d0d49dd1c6b8fd17";
+        result = SHA2_HashStringSHA512(messagePtr, SHA2_SHA512_384);
+        EvaluateResult(messagePtr, targetDigest, result.DigestStr);
+
+        printf("\n");
+
         printf("SHA512 hash tests:\n");
+
         messagePtr = (char *)"";
         targetDigest = (char *)"cf83e1357eefb8bdf1542850d66d8007d620e4050b5715dc83f4a921d36ce9ce47d0d13c5d85f2b0ff8318d2877eec2f63b931bd47417a81a538327af927da3e";
-        result = SHA2_HashStringSHA512(messagePtr);
+        result = SHA2_HashStringSHA512(messagePtr, SHA2_SHA512_512);
         EvaluateResult(messagePtr, targetDigest, result.DigestStr);
 
         messagePtr = (char *)"abc";
         targetDigest = (char *)"ddaf35a193617abacc417349ae20413112e6fa4e89a97ea20a9eeee64b55d39a2192992a274fc1a836ba3c23a3feebbd454d4423643ce80e2a9ac94fa54ca49f";
-        result = SHA2_HashStringSHA512(messagePtr);
+        result = SHA2_HashStringSHA512(messagePtr, SHA2_SHA512_512);
         EvaluateResult(messagePtr, targetDigest, result.DigestStr);
 
         messagePtr = (char *)"abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq";
         targetDigest = (char *)"204a8fc6dda82f0a0ced7beb8e08a41657c16ef468b228a8279be331a703c33596fd15c13b1b07f9aa1d3bea57789ca031ad85c7a71dd70354ec631238ca3445";
-        result = SHA2_HashStringSHA512(messagePtr);
+        result = SHA2_HashStringSHA512(messagePtr, SHA2_SHA512_512);
         EvaluateResult(messagePtr, targetDigest, result.DigestStr);
 
         messagePtr = (char *)"The quick brown fox jumps over the lazy dog over and over and over and over and over and over and over and over and over again";
         targetDigest = (char *)"ecb6e7fcae5ef6fe6c23c634d60d590e5d20bd514473038debcc4aa84683d1eb95027ea407eda262bb93f0606fb0231f6970354b8c66e7fb44cdf3a86d8007bd";
-        result = SHA2_HashStringSHA512(messagePtr);
+        result = SHA2_HashStringSHA512(messagePtr, SHA2_SHA512_512);
         EvaluateResult(messagePtr, targetDigest, result.DigestStr);
     }
 #endif
