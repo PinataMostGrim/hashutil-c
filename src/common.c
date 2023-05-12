@@ -1,6 +1,7 @@
 #ifndef HASHUTIL_COMMON
 #define HASHUTIL_COMMON
 
+#include <stddef.h>
 #include <stdint.h>
 #include <stdbool.h>
 
@@ -55,16 +56,22 @@ static void MirrorBits64(uint64_t *bits)
          | ((*bits << 56) & 0xff00000000000000);
 }
 
-// Circular bit shift left
+// 32bit Circular bit shift left
 static uint32_t ROTL(uint32_t value, uint8_t count)
 {
     return (value << count) | (value >> (32 - count));
 }
 
-// Circular bit shift right
-static uint32_t ROTR(uint32_t value, uint8_t count)
+// 32bit Circular bit shift right
+static uint32_t ROTR32(uint32_t value, uint8_t count)
 {
     return (value >> count) | (value << (32 - count));
+}
+
+// 64bit Circular bit shift right
+static uint64_t ROTR64(uint64_t value, uint8_t count)
+{
+    return (value >> count) | (value << (64 - count));
 }
 
 #endif
