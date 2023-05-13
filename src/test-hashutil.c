@@ -232,6 +232,52 @@ int main()
         }
 
         printf("\n");
+
+        printf("SHA512/224 hash tests:\n");
+
+        char *sha512_224MessageTargetDigests[] =
+        {
+            "6ed0dd02806fa89e25de060c19d3ac86cabb87d6a0ddd05c333b84f4",
+            "4634270f707b6a54daae7530460842e20e37ed265ceee9a43e8924aa",
+            "e5302d6d54bb242275d1e7622d68df6eb02dedd13f564c13dbda2174",
+            "e7863d028bbcea0fc84c0c7f53ac4dc5bf4f055964cfdac0dbe6e6e6",
+            "b599fad02f1546bef9765e09741262e850f3971373a22ddc5b81d9aa",
+        };
+
+        static_assert(ArrayCount(messages) == ArrayCount(sha512_224MessageTargetDigests),
+                      "Mismatched number of messages and target digests for SHA512/224");
+
+        // Test string hashing
+        for (int i = 0; i < ArrayCount(messages); ++i)
+        {
+            sha512Context = SHA2_HashStringSHA512(messages[i], SHA2_SHA512_512_224);
+            EvaluateResult(messages[i], sha512_224MessageTargetDigests[i], sha512Context.DigestStr);
+        }
+
+        printf("\n");
+
+        printf("SHA512/256 hash tests:\n");
+
+        char *sha512_256MessageTargetDigests[] =
+        {
+            "c672b8d1ef56ed28ab87c3622c5114069bdd3ad7b8f9737498d0c01ecef0967a",
+            "53048e2681941ef99b2e29b76b4c7dabe4c2d0c634fc6d46e0e2f13107e7af23",
+            "bde8e1f9f19bb9fd3406c90ec6bc47bd36d8ada9f11880dbc8a22a7078b6a461",
+            "a19a9ac89dd2da9ce45ef52b33ae26e181986b559f3985502d0ded15e7050f5f",
+            "34ce5007b7fb6734cd95a422ac4e1220122077c7165e048dad16a5cbca610676",
+        };
+
+        static_assert(ArrayCount(messages) == ArrayCount(sha512_256MessageTargetDigests),
+                      "Mismatched number of messages and target digests for SHA512/256");
+
+        // Test string hashing
+        for (int i = 0; i < ArrayCount(messages); ++i)
+        {
+            sha512Context = SHA2_HashStringSHA512(messages[i], SHA2_SHA512_512_256);
+            EvaluateResult(messages[i], sha512_256MessageTargetDigests[i], sha512Context.DigestStr);
+        }
+
+        printf("\n");
     }
 #endif
 

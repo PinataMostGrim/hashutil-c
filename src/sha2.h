@@ -71,6 +71,8 @@ typedef enum sha2_digest_length_512
 {
     SHA2_SHA512_384,
     SHA2_SHA512_512,
+    SHA2_SHA512_512_224,
+    SHA2_SHA512_512_256,
 } sha2_digest_length_512;
 
 typedef struct sha2_message_padding_info
@@ -232,6 +234,44 @@ static void SHA2_InitializeContextSHA512(sha2_512_context *context)
     context->H[5]= 0x9b05688c2b3e6c1f;
     context->H[6]= 0x1f83d9abfb41bd6b;
     context->H[7]= 0x5be0cd19137e2179;
+
+#if HASHUTIL_SLOW
+    MemorySet((uint8_t *)context->DigestStr, 0, sizeof(context->DigestStr));
+#endif
+}
+
+static void SHA2_InitializeContextSHA512_224(sha2_512_context *context)
+{
+    context->MessageLengthBits.High = 0;
+    context->MessageLengthBits.Low = 0;
+
+    context->H[0]= 0x8C3D37C819544DA2;
+    context->H[1]= 0x73E1996689DCD4D6;
+    context->H[2]= 0x1DFAB7AE32FF9C82;
+    context->H[3]= 0x679DD514582F9FCF;
+    context->H[4]= 0x0F6D2B697BD44DA8;
+    context->H[5]= 0x77E36F7304C48942;
+    context->H[6]= 0x3F9D85A86A1D36C8;
+    context->H[7]= 0x1112E6AD91D692A1;
+
+#if HASHUTIL_SLOW
+    MemorySet((uint8_t *)context->DigestStr, 0, sizeof(context->DigestStr));
+#endif
+}
+
+static void SHA2_InitializeContextSHA512_256(sha2_512_context *context)
+{
+    context->MessageLengthBits.High = 0;
+    context->MessageLengthBits.Low = 0;
+
+    context->H[0]= 0x22312194FC2BF72C;
+    context->H[1]= 0x9F555FA3C84C64C2;
+    context->H[2]= 0x2393B86B6F53B151;
+    context->H[3]= 0x963877195940EABD;
+    context->H[4]= 0x96283EE2A88EFFE3;
+    context->H[5]= 0xBE5E1E2553863992;
+    context->H[6]= 0x2B0199FC2C85B8AA;
+    context->H[7]= 0x0EB72DDC81C52CA2;
 
 #if HASHUTIL_SLOW
     MemorySet((uint8_t *)context->DigestStr, 0, sizeof(context->DigestStr));
@@ -559,7 +599,7 @@ static void SHA2_UpdateHashSHA512(sha2_512_context *context, uint8_t *messagePtr
 static void SHA2_ConstructDigestSHA224(sha2_256_context *context)
 {
     // Assert buffer is large enough to hold a SHA224 digest
-    // 224 bits in hex, plus the string null terminator character
+    // (224 bits in hex, plus the string null terminator character)
     Assert(ArrayCount(context->DigestStr) >= (224 / 4 + 1))
 
     sprintf(context->DigestStr,
@@ -576,7 +616,7 @@ static void SHA2_ConstructDigestSHA224(sha2_256_context *context)
 static void SHA2_ConstructDigestSHA256(sha2_256_context *context)
 {
     // Assert buffer is large enough to hold a SHA256 digest
-    // 256 bits in hex, plus the string null terminator character
+    // (256 bits in hex, plus the string null terminator character)
     Assert(ArrayCount(context->DigestStr) >= (256 / 4 + 1));
 
     sprintf(context->DigestStr,
@@ -594,7 +634,7 @@ static void SHA2_ConstructDigestSHA256(sha2_256_context *context)
 static void SHA2_ConstructDigestSHA384(sha2_512_context *context)
 {
     // Assert buffer is large enough to hold a SHA384 digest
-    // 384 bits in hex, plus the string null terminator character
+    // (384 bits in hex, plus the string null terminator character)
     Assert(ArrayCount(context->DigestStr) >= (384 / 4 + 1));
 
     sprintf(context->DigestStr,
@@ -611,7 +651,7 @@ static void SHA2_ConstructDigestSHA384(sha2_512_context *context)
 static void SHA2_ConstructDigestSHA512(sha2_512_context *context)
 {
     // Assert buffer is large enough to hold a SHA512 digest
-    // 512 bits in hex, plus the string null terminator character
+    // (512 bits in hex, plus the string null terminator character)
     Assert(ArrayCount(context->DigestStr) >= (512 / 4 + 1));
 
     sprintf(context->DigestStr,
@@ -624,6 +664,36 @@ static void SHA2_ConstructDigestSHA512(sha2_512_context *context)
             context->H[5],
             context->H[6],
             context->H[7]);
+}
+
+static void SHA2_ConstructDigestSHA512_224(sha2_512_context *context)
+{
+    // Assert buffer is large enough to hold a SHA512/224 digest
+    // (224 bits in hex, plus the string null terminator character)
+    Assert(ArrayCount(context->DigestStr) >= (224 / 4 + 1));
+
+    sprintf(context->DigestStr,
+            // TODO (Aaron): Look up this formatting to make sure it is correct
+            "%016llx%016llx%016llx%08llx",
+            context->H[0],
+            context->H[1],
+            context->H[2],
+            (context->H[3] >> 32));
+}
+
+static void SHA2_ConstructDigestSHA512_256(sha2_512_context *context)
+{
+    // Assert buffer is large enough to hold a SHA512/256 digest
+    // (256 bits in hex, plus the string null terminator character)
+    Assert(ArrayCount(context->DigestStr) >= (512 / 4 + 1));
+
+    sprintf(context->DigestStr,
+            // TODO (Aaron): Look up this formatting to make sure it is correct
+            "%016llx%016llx%016llx%016llx",
+            context->H[0],
+            context->H[1],
+            context->H[2],
+            context->H[3]);
 }
 
 sha2_256_context SHA2_HashStringSHA256(char *messagePtr, sha2_digest_length_256 digestLength)
@@ -712,6 +782,16 @@ sha2_512_context SHA2_HashStringSHA512(char *messagePtr, sha2_digest_length_512 
             SHA2_InitializeContextSHA384(&context);
             break;
         }
+        case SHA2_SHA512_512_224:
+        {
+            SHA2_InitializeContextSHA512_224(&context);
+            break;
+        }
+        case SHA2_SHA512_512_256:
+        {
+            SHA2_InitializeContextSHA512_256(&context);
+            break;
+        }
         case SHA2_SHA512_512:
         default:
         {
@@ -766,7 +846,18 @@ sha2_512_context SHA2_HashStringSHA512(char *messagePtr, sha2_digest_length_512 
             SHA2_ConstructDigestSHA384(&context);
             break;
         }
+        case SHA2_SHA512_512_224:
+        {
+            SHA2_ConstructDigestSHA512_224(&context);
+            break;
+        }
+        case SHA2_SHA512_512_256:
+        {
+            SHA2_ConstructDigestSHA512_256(&context);
+            break;
+        }
         case SHA2_SHA512_512:
+        default:
         {
             SHA2_ConstructDigestSHA512(&context);
             break;
