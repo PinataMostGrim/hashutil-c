@@ -155,6 +155,14 @@ sha2_512_context SHA2_HashStringSHA512(char *messagePtr, sha2_digest_length_512 
 #include <stdbool.h>
 #include "common.c"
 
+#if HASHUTIL_SLOW
+#include <assert.h>
+#define sha2_static_assert(expression, string) static_assert(expression, string)
+#define sha2_assert(expression) assert(expression)
+#else
+#define sha2_static_assert(expression, string)
+#define sha2_assert(expression)
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -368,10 +376,10 @@ uint64_t SSIG1_SHA512(uint64_t x)
 void SHA2_ApplyPadding(sha2_message_padding_info messageInfo)
 {
     // We are expecting a buffer that can hold up to two message blocks
-    Assert(messageInfo.BufferSizeBytes / messageInfo.BlockSizeBytes == 2);
+    sha2_assert(messageInfo.BufferSizeBytes / messageInfo.BlockSizeBytes == 2);
 
     // Message + padding + message length bits need to fit within the buffer
-    Assert(messageInfo.MessageSizeBytes <= (messageInfo.BufferSizeBytes - messageInfo.MessageLengthBlockSizeBytes - 1));
+    sha2_assert(messageInfo.MessageSizeBytes <= (messageInfo.BufferSizeBytes - messageInfo.MessageLengthBlockSizeBytes - 1));
 
 #if HASHUTIL_SLOW
     // Note (Aaron): Useful for debug purposes to pack the buffer's bits with 1s
@@ -432,7 +440,7 @@ void SHA2_ApplyPadding(sha2_message_padding_info messageInfo)
 static void SHA2_UpdateHashSHA256(sha2_256_context *context, uint8_t *messagePtr, uint64_t messageByteCount)
 {
     // Assert that the message is divisible by 512-bits (64 bytes)
-    Assert(messageByteCount % SHA2_MESSAGE_BLOCK_SHA256 == 0);
+    sha2_assert(messageByteCount % SHA2_MESSAGE_BLOCK_SHA256 == 0);
 
     uint32_t A, B, C, D, E, F, G, H;
 #if HASHUTIL_SLOW
@@ -514,8 +522,12 @@ static void SHA2_UpdateHashSHA256(sha2_256_context *context, uint8_t *messagePtr
 
 static void SHA2_UpdateHashSHA512(sha2_512_context *context, uint8_t *messagePtr, uint64_t byteCount)
 {
+    // Note (Aaron): Using a uint64_t type for 'byteCount' limits the maximum amount of data that can be
+    // passed through this method on one invocation to less than what the algorithm can support  but that's
+    // fine as it would be in the Pebibyte range and totally impractical.
+
     // Assert that the message is divisible by 1024-bits (128 bytes)
-    Assert(byteCount % SHA2_MESSAGE_BLOCK_SHA512 == 0);
+    sha2_assert(byteCount % SHA2_MESSAGE_BLOCK_SHA512 == 1);
 
     uint64_t A, B, C, D, E, F, G, H;
 #if HASHUTIL_SLOW
@@ -600,7 +612,8 @@ static void SHA2_ConstructDigestSHA224(sha2_256_context *context)
 {
     // Assert buffer is large enough to hold a SHA224 digest
     // (224 bits in hex, plus the string null terminator character)
-    Assert(ArrayCount(context->DigestStr) >= (224 / 4 + 1))
+    sha2_static_assert(ArrayCount(context->DigestStr) >= (224 / 4 + 1),
+                  "Buffer is not large enough to hold SHA224 digest");
 
     sprintf(context->DigestStr,
             "%08x%08x%08x%08x%08x%08x%08x",
@@ -617,7 +630,8 @@ static void SHA2_ConstructDigestSHA256(sha2_256_context *context)
 {
     // Assert buffer is large enough to hold a SHA256 digest
     // (256 bits in hex, plus the string null terminator character)
-    Assert(ArrayCount(context->DigestStr) >= (256 / 4 + 1));
+    sha2_static_assert(ArrayCount(context->DigestStr) >= (256 / 4 + 1),
+                  "Buffer is not large enough to hold SHA256 digest");
 
     sprintf(context->DigestStr,
             "%08x%08x%08x%08x%08x%08x%08x%08x",
@@ -635,7 +649,8 @@ static void SHA2_ConstructDigestSHA384(sha2_512_context *context)
 {
     // Assert buffer is large enough to hold a SHA384 digest
     // (384 bits in hex, plus the string null terminator character)
-    Assert(ArrayCount(context->DigestStr) >= (384 / 4 + 1));
+    sha2_static_assert(ArrayCount(context->DigestStr) >= (384 / 4 + 1),
+                  "Buffer is not large enough to hold SHA384 digest");
 
     sprintf(context->DigestStr,
             // TODO (Aaron): Look up this formatting to make sure it is correct
@@ -652,7 +667,8 @@ static void SHA2_ConstructDigestSHA512(sha2_512_context *context)
 {
     // Assert buffer is large enough to hold a SHA512 digest
     // (512 bits in hex, plus the string null terminator character)
-    Assert(ArrayCount(context->DigestStr) >= (512 / 4 + 1));
+    sha2_static_assert(ArrayCount(context->DigestStr) >= (512 / 4 + 1),
+                  "Buffer is not large enough to hold SHA512 digest");
 
     sprintf(context->DigestStr,
             "%016llx%016llx%016llx%016llx%016llx%016llx%016llx%016llx",
@@ -670,7 +686,8 @@ static void SHA2_ConstructDigestSHA512_224(sha2_512_context *context)
 {
     // Assert buffer is large enough to hold a SHA512/224 digest
     // (224 bits in hex, plus the string null terminator character)
-    Assert(ArrayCount(context->DigestStr) >= (224 / 4 + 1));
+    sha2_static_assert(ArrayCount(context->DigestStr) >= (224 / 4 + 1),
+                  "Buffer is not large enough to hold SHA512/224 digest");
 
     sprintf(context->DigestStr,
             // TODO (Aaron): Look up this formatting to make sure it is correct
@@ -685,7 +702,8 @@ static void SHA2_ConstructDigestSHA512_256(sha2_512_context *context)
 {
     // Assert buffer is large enough to hold a SHA512/256 digest
     // (256 bits in hex, plus the string null terminator character)
-    Assert(ArrayCount(context->DigestStr) >= (512 / 4 + 1));
+    sha2_static_assert(ArrayCount(context->DigestStr) >= (256 / 4 + 1),
+                  "Buffer is not large enough to hold SHA512/256 digest");
 
     sprintf(context->DigestStr,
             // TODO (Aaron): Look up this formatting to make sure it is correct
@@ -718,7 +736,7 @@ sha2_256_context SHA2_HashStringSHA256(char *messagePtr, sha2_digest_length_256 
 
     while (*messagePtr != 0x00)
     {
-        Assert(messageByteCount < SHA2_MESSAGE_BLOCK_SHA256);
+        sha2_assert(messageByteCount < SHA2_MESSAGE_BLOCK_SHA256);
 
         messagePtr++;
         messageByteCount++;
@@ -802,7 +820,7 @@ sha2_512_context SHA2_HashStringSHA512(char *messagePtr, sha2_digest_length_512 
 
     while (*messagePtr != 0x00)
     {
-        Assert(messageByteCount < SHA2_MESSAGE_BLOCK_SHA512);
+        sha2_assert(messageByteCount < SHA2_MESSAGE_BLOCK_SHA512);
 
         messagePtr++;
         messageByteCount++;
