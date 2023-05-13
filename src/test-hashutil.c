@@ -162,7 +162,7 @@ int main()
         sha2_256_context sha256Context;
         for (int i = 0; i < ArrayCount(messages); ++i)
         {
-            sha256Context = SHA2_HashStringSHA256(messages[i], SHA2_SHA256_224);
+            sha256Context = SHA2_HashStringSHA256_224(messages[i]);
             EvaluateResult(messages[i], sha224MessageTargetDigests[i], sha256Context.DigestStr);
         }
 
@@ -186,7 +186,7 @@ int main()
         // Test string hashing
         for (int i = 0; i < ArrayCount(messages); ++i)
         {
-            sha256Context = SHA2_HashStringSHA256(messages[i], SHA2_SHA256_256);
+            sha256Context = SHA2_HashStringSHA256_256(messages[i]);
             EvaluateResult(messages[i], sha256MessageTargetDigests[i], sha256Context.DigestStr);
         }
 
@@ -214,7 +214,7 @@ int main()
         sha2_512_context sha512Context;
         for (int i = 0; i < ArrayCount(messages); ++i)
         {
-            sha512Context = SHA2_HashStringSHA512(messages[i], SHA2_SHA512_384);
+            sha512Context = SHA2_HashStringSHA512_384(messages[i]);
             EvaluateResult(messages[i], sha384MessageTargetDigests[i], sha512Context.DigestStr);
         }
 
@@ -237,7 +237,7 @@ int main()
         // Test string hashing
         for (int i = 0; i < ArrayCount(messages); ++i)
         {
-            sha512Context = SHA2_HashStringSHA512(messages[i], SHA2_SHA512_512);
+            sha512Context = SHA2_HashStringSHA512_512(messages[i]);
             EvaluateResult(messages[i], sha512MessageTargetDigests[i], sha512Context.DigestStr);
         }
 
@@ -260,7 +260,7 @@ int main()
         // Test string hashing
         for (int i = 0; i < ArrayCount(messages); ++i)
         {
-            sha512Context = SHA2_HashStringSHA512(messages[i], SHA2_SHA512_512_224);
+            sha512Context = SHA2_HashStringSHA512_224(messages[i]);
             EvaluateResult(messages[i], sha512_224MessageTargetDigests[i], sha512Context.DigestStr);
         }
 
@@ -283,7 +283,7 @@ int main()
         // Test string hashing
         for (int i = 0; i < ArrayCount(messages); ++i)
         {
-            sha512Context = SHA2_HashStringSHA512(messages[i], SHA2_SHA512_512_256);
+            sha512Context = SHA2_HashStringSHA512_256(messages[i]);
             EvaluateResult(messages[i], sha512_256MessageTargetDigests[i], sha512Context.DigestStr);
         }
 

@@ -69,10 +69,10 @@ typedef enum sha2_digest_length_256
 
 typedef enum sha2_digest_length_512
 {
+    SHA2_SHA512_224,
+    SHA2_SHA512_256,
     SHA2_SHA512_384,
     SHA2_SHA512_512,
-    SHA2_SHA512_512_224,
-    SHA2_SHA512_512_256,
 } sha2_digest_length_512;
 
 typedef struct sha2_message_padding_info
@@ -138,8 +138,12 @@ extern "C" {
 #endif
 
 uint32_t SHA2_GetVersion();
-sha2_256_context SHA2_HashStringSHA256(char *messagePtr, sha2_digest_length_256 digestLength);
-sha2_512_context SHA2_HashStringSHA512(char *messagePtr, sha2_digest_length_512 digestLength);
+sha2_256_context SHA2_HashStringSHA256_224(char *messagePtr);
+sha2_256_context SHA2_HashStringSHA256_256(char *messagePtr);
+sha2_512_context SHA2_HashStringSHA512_384(char *messagePtr);
+sha2_512_context SHA2_HashStringSHA512_512(char *messagePtr);
+sha2_512_context SHA2_HashStringSHA512_224(char *messagePtr);
+sha2_512_context SHA2_HashStringSHA512_256(char *messagePtr);
 
 #ifdef __cplusplus
 }
@@ -855,12 +859,12 @@ sha2_512_context SHA2_HashStringSHA512(char *messagePtr, sha2_digest_length_512 
             SHA2_InitializeContextSHA384(&context);
             break;
         }
-        case SHA2_SHA512_512_224:
+        case SHA2_SHA512_224:
         {
             SHA2_InitializeContextSHA512_224(&context);
             break;
         }
-        case SHA2_SHA512_512_256:
+        case SHA2_SHA512_256:
         {
             SHA2_InitializeContextSHA512_256(&context);
             break;
@@ -919,12 +923,12 @@ sha2_512_context SHA2_HashStringSHA512(char *messagePtr, sha2_digest_length_512 
             SHA2_ConstructDigestSHA384(&context);
             break;
         }
-        case SHA2_SHA512_512_224:
+        case SHA2_SHA512_224:
         {
             SHA2_ConstructDigestSHA512_224(&context);
             break;
         }
-        case SHA2_SHA512_512_256:
+        case SHA2_SHA512_256:
         {
             SHA2_ConstructDigestSHA512_256(&context);
             break;
@@ -938,6 +942,36 @@ sha2_512_context SHA2_HashStringSHA512(char *messagePtr, sha2_digest_length_512 
     }
 
     return context;
+}
+
+sha2_256_context SHA2_HashStringSHA256_224(char *messagePtr)
+{
+    return SHA2_HashStringSHA256(messagePtr, SHA2_SHA256_224);
+}
+
+sha2_256_context SHA2_HashStringSHA256_256(char *messagePtr)
+{
+    return SHA2_HashStringSHA256(messagePtr, SHA2_SHA256_256);
+}
+
+sha2_512_context SHA2_HashStringSHA512_384(char *messagePtr)
+{
+    return SHA2_HashStringSHA512(messagePtr, SHA2_SHA512_384);
+}
+
+sha2_512_context SHA2_HashStringSHA512_512(char *messagePtr)
+{
+    return SHA2_HashStringSHA512(messagePtr, SHA2_SHA512_512);
+}
+
+sha2_512_context SHA2_HashStringSHA512_224(char *messagePtr)
+{
+    return SHA2_HashStringSHA512(messagePtr, SHA2_SHA512_224);
+}
+
+sha2_512_context SHA2_HashStringSHA512_256(char *messagePtr)
+{
+    return SHA2_HashStringSHA512(messagePtr, SHA2_SHA512_256);
 }
 
 #ifdef __cplusplus
