@@ -11,8 +11,8 @@
 #include "common.c"
 
 
-static uint32_t PASSING_TESTS = 0;
-static uint32_t FAILING_TESTS = 0;
+static int32_t PASSING_TESTS = 0;
+static int32_t FAILING_TESTS = 0;
 static bool ALL_TESTS_PASSED = true;
 
 
