@@ -153,7 +153,6 @@ sha2_512_context SHA2_HashStringSHA512(char *messagePtr, sha2_digest_length_512 
 
 #include <stdio.h>
 #include <stdbool.h>
-#include "common.c"
 
 #if HASHUTIL_SLOW
 #include <assert.h>
@@ -164,6 +163,8 @@ sha2_512_context SHA2_HashStringSHA512(char *messagePtr, sha2_digest_length_512 
 #define sha2_assert(expression)
 #endif
 
+#define SHA2_ArrayCount(Array) (sizeof(Array) / sizeof((Array)[0]))
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -172,6 +173,60 @@ uint32_t SHA2_GetVersion()
 {
     uint32_t result = HASHUTIL_SHA2_VERSION;
     return result;
+}
+
+static void *SHA2_MemoryCopy(void *destPtr, void const *sourcePtr, size_t size)
+{
+    sha2_assert(size > 0);
+
+    unsigned char *source = (unsigned char *)sourcePtr;
+    unsigned char *dest = (unsigned char *)destPtr;
+    while(size--) *dest++ = *source++;
+
+    return destPtr;
+}
+
+static void *SHA2_MemorySet(uint8_t *destPtr, int c, size_t count)
+{
+    sha2_assert(count > 0);
+
+    unsigned char *dest = (unsigned char *)destPtr;
+    while(count--) *dest++ = (unsigned char)c;
+
+    return destPtr;
+}
+
+// 32-bit Circular bit shift right
+static uint32_t SHA2_ROTR32(uint32_t value, uint8_t count)
+{
+    return (value >> count) | (value << (32 - count));
+}
+
+// 64-bit Circular bit shift right
+static uint64_t SHA2_ROTR64(uint64_t value, uint8_t count)
+{
+    return (value >> count) | (value << (64 - count));
+}
+
+// Swap endianness of 64 bit value
+static void SHA2_MirrorBits64(uint64_t *bits)
+{
+    *bits = ((*bits >> 56) & 0xff)
+         | ((*bits >> 40) & 0xff00)
+         | ((*bits >> 24) & 0xff0000)
+         | ((*bits >> 8) & 0xff000000)
+         | ((*bits << 8) & 0xff00000000)
+         | ((*bits << 24) & 0xff0000000000)
+         | ((*bits << 40) & 0xff000000000000)
+         | ((*bits << 56) & 0xff00000000000000);
+}
+
+static bool SHA2_IsSystemLittleEndian()
+{
+    uint32_t endianTest = 0xdeadbeef;
+    bool isLittleEndian = *(unsigned char *)&endianTest = 0xef;
+
+    return isLittleEndian;
 }
 
 static void SHA2_InitializeContextSHA224(sha2_256_context *context)
@@ -188,7 +243,7 @@ static void SHA2_InitializeContextSHA224(sha2_256_context *context)
     context->H[7] = 0xbefa4fa4;
 
 #if HASHUTIL_SLOW
-    MemorySet((uint8_t *)context->DigestStr, 0, sizeof(context->DigestStr));
+    SHA2_MemorySet((uint8_t *)context->DigestStr, 0, sizeof(context->DigestStr));
 #endif
 }
 
@@ -206,7 +261,7 @@ static void SHA2_InitializeContextSHA256(sha2_256_context *context)
     context->H[7] = 0x5be0cd19;
 
 #if HASHUTIL_SLOW
-    MemorySet((uint8_t *)context->DigestStr, 0, sizeof(context->DigestStr));
+    SHA2_MemorySet((uint8_t *)context->DigestStr, 0, sizeof(context->DigestStr));
 #endif
 }
 
@@ -225,7 +280,7 @@ static void SHA2_InitializeContextSHA384(sha2_512_context *context)
     context->H[7]= 0x47b5481dbefa4fa4;
 
 #if HASHUTIL_SLOW
-    MemorySet((uint8_t *)context->DigestStr, 0, sizeof(context->DigestStr));
+    SHA2_MemorySet((uint8_t *)context->DigestStr, 0, sizeof(context->DigestStr));
 #endif
 }
 
@@ -244,7 +299,7 @@ static void SHA2_InitializeContextSHA512(sha2_512_context *context)
     context->H[7]= 0x5be0cd19137e2179;
 
 #if HASHUTIL_SLOW
-    MemorySet((uint8_t *)context->DigestStr, 0, sizeof(context->DigestStr));
+    SHA2_MemorySet((uint8_t *)context->DigestStr, 0, sizeof(context->DigestStr));
 #endif
 }
 
@@ -263,7 +318,7 @@ static void SHA2_InitializeContextSHA512_224(sha2_512_context *context)
     context->H[7]= 0x1112E6AD91D692A1;
 
 #if HASHUTIL_SLOW
-    MemorySet((uint8_t *)context->DigestStr, 0, sizeof(context->DigestStr));
+    SHA2_MemorySet((uint8_t *)context->DigestStr, 0, sizeof(context->DigestStr));
 #endif
 }
 
@@ -282,7 +337,7 @@ static void SHA2_InitializeContextSHA512_256(sha2_512_context *context)
     context->H[7]= 0x0EB72DDC81C52CA2;
 
 #if HASHUTIL_SLOW
-    MemorySet((uint8_t *)context->DigestStr, 0, sizeof(context->DigestStr));
+    SHA2_MemorySet((uint8_t *)context->DigestStr, 0, sizeof(context->DigestStr));
 #endif
 }
 
@@ -316,25 +371,25 @@ uint32_t MAJ_SHA256(uint32_t x, uint32_t y, uint32_t z)
 uint32_t BSIG0_SHA256(uint32_t x)
 {
     // BSIG0(x) = ROTR^2(x) XOR ROTR^13(x) XOR ROTR^22(x)
-    return ROTR32(x, 2) ^ ROTR32(x, 13) ^ ROTR32(x, 22);
+    return SHA2_ROTR32(x, 2) ^ SHA2_ROTR32(x, 13) ^ SHA2_ROTR32(x, 22);
 }
 
 uint32_t BSIG1_SHA256(uint32_t x)
 {
     // BSIG1(x) = ROTR^6(x) XOR ROTR^11(x) XOR ROTR^25(x)
-    return ROTR32(x, 6) ^ ROTR32(x, 11) ^ ROTR32(x, 25);
+    return SHA2_ROTR32(x, 6) ^ SHA2_ROTR32(x, 11) ^ SHA2_ROTR32(x, 25);
 }
 
 uint32_t SSIG0_SHA256(uint32_t x)
 {
     // SSIG0(x) = ROTR^7(x) XOR ROTR^18(x) XOR SHR^3(x)
-    return ROTR32(x, 7) ^ ROTR32(x, 18) ^ (x >> 3);
+    return SHA2_ROTR32(x, 7) ^ SHA2_ROTR32(x, 18) ^ (x >> 3);
 }
 
 uint32_t SSIG1_SHA256(uint32_t x)
 {
     // SSIG1(x) = ROTR^17(x) XOR ROTR^19(x) XOR SHR^10(x)
-    return ROTR32(x, 17) ^ ROTR32(x, 19) ^ (x >> 10);
+    return SHA2_ROTR32(x, 17) ^ SHA2_ROTR32(x, 19) ^ (x >> 10);
 }
 
 uint64_t CH_SHA512(uint64_t x, uint64_t y, uint64_t z)
@@ -352,25 +407,25 @@ uint64_t MAJ_SHA512(uint64_t x, uint64_t y, uint64_t z)
 uint64_t BSIG0_SHA512(uint64_t x)
 {
     // BSIG0(x) = ROTR^28(x) XOR ROTR^34(x) XOR ROTR^39(x)
-    return ROTR64(x, 28) ^ ROTR64(x, 34) ^ ROTR64(x, 39);
+    return SHA2_ROTR64(x, 28) ^ SHA2_ROTR64(x, 34) ^ SHA2_ROTR64(x, 39);
 }
 
 uint64_t BSIG1_SHA512(uint64_t x)
 {
     // BSIG1(x) = ROTR^14(x) XOR ROTR^18(x) XOR ROTR^41(x)
-    return ROTR64(x, 14) ^ ROTR64(x, 18) ^ ROTR64(x, 41);
+    return SHA2_ROTR64(x, 14) ^ SHA2_ROTR64(x, 18) ^ SHA2_ROTR64(x, 41);
 }
 
 uint64_t SSIG0_SHA512(uint64_t x)
 {
     // SSIG0(x) = ROTR^1(x) XOR ROTR^8(x) XOR SHR^7(x)
-    return ROTR64(x, 1) ^ ROTR64(x, 8) ^ (x >> 7);
+    return SHA2_ROTR64(x, 1) ^ SHA2_ROTR64(x, 8) ^ (x >> 7);
 }
 
 uint64_t SSIG1_SHA512(uint64_t x)
 {
     // SSIG1(x) = ROTR^19(x) XOR ROTR^61(x) XOR SHR^6(x)
-    return ROTR64(x, 19) ^ ROTR64(x, 61) ^ (x >> 6);
+    return SHA2_ROTR64(x, 19) ^ SHA2_ROTR64(x, 61) ^ (x >> 6);
 }
 
 void SHA2_ApplyPadding(sha2_message_padding_info messageInfo)
@@ -383,7 +438,7 @@ void SHA2_ApplyPadding(sha2_message_padding_info messageInfo)
 
 #if HASHUTIL_SLOW
     // Note (Aaron): Useful for debug purposes to pack the buffer's bits with 1s
-    MemorySet((uint8_t *)messageInfo.BufferPtr, 0xff, messageInfo.BufferSizeBytes);
+    SHA2_MemorySet((uint8_t *)messageInfo.BufferPtr, 0xff, messageInfo.BufferSizeBytes);
 #endif
 
     bool useFullBuffer = messageInfo.MessageSizeBytes > (messageInfo.BlockSizeBytes - messageInfo.MessageLengthBlockSizeBytes - 1);
@@ -392,7 +447,7 @@ void SHA2_ApplyPadding(sha2_message_padding_info messageInfo)
     // Copy message remainder (if any) into buffer
     if (messageInfo.MessageSizeBytes > 0)
     {
-        MemoryCopy(messageInfo.BufferPtr, (uint8_t *)(messageInfo.MessagePtr - messageInfo.MessageSizeBytes), messageInfo.MessageSizeBytes);
+        SHA2_MemoryCopy(messageInfo.BufferPtr, (uint8_t *)(messageInfo.MessagePtr - messageInfo.MessageSizeBytes), messageInfo.MessageSizeBytes);
     }
 
     // Apply padded 1
@@ -414,10 +469,10 @@ void SHA2_ApplyPadding(sha2_message_padding_info messageInfo)
     uint64_t messageLengthBitsHigh = messageInfo.MessageLengthBitsHigh;
     uint64_t messageLengthBitsLow = messageInfo.MessageLengthBitsLow;
 
-    if (IsSystemLittleEndian())
+    if (SHA2_IsSystemLittleEndian())
     {
-        MirrorBits64(&messageLengthBitsHigh);
-        MirrorBits64(&messageLengthBitsLow);
+        SHA2_MirrorBits64(&messageLengthBitsHigh);
+        SHA2_MirrorBits64(&messageLengthBitsLow);
     }
 
     switch(messageInfo.MessageLengthBlockSizeBytes)
@@ -456,7 +511,7 @@ static void SHA2_UpdateHashSHA256(sha2_256_context *context, uint8_t *messagePtr
 
     uint32_t W[64];
 #if HASHUTIL_SLOW
-    MemorySet((uint8_t *)W, 0, sizeof(W));
+    SHA2_MemorySet((uint8_t *)W, 0, sizeof(W));
 #endif
 
     uint32_t t1 = 0;
@@ -476,7 +531,7 @@ static void SHA2_UpdateHashSHA256(sha2_256_context *context, uint8_t *messagePtr
                  | ((uint32_t)*(messagePtr + i + (j * 4) + 3));
         }
 
-        for (int t = 16; t < ArrayCount(W); ++t)
+        for (int t = 16; t < SHA2_ArrayCount(W); ++t)
         {
             // Wt = SSIG1(W(t-2)) + W(t-7) + SSIG0(w(t-15)) + W(t-16)
             W[t] = SSIG1_SHA256(W[t-2]) + W[t-7] + SSIG0_SHA256(W[t-15]) + W[t-16];
@@ -527,7 +582,7 @@ static void SHA2_UpdateHashSHA512(sha2_512_context *context, uint8_t *messagePtr
     // fine as it would be in the Pebibyte range and totally impractical.
 
     // Assert that the message is divisible by 1024-bits (128 bytes)
-    sha2_assert(byteCount % SHA2_MESSAGE_BLOCK_SHA512 == 1);
+    sha2_assert(byteCount % SHA2_MESSAGE_BLOCK_SHA512 == 0);
 
     uint64_t A, B, C, D, E, F, G, H;
 #if HASHUTIL_SLOW
@@ -543,7 +598,7 @@ static void SHA2_UpdateHashSHA512(sha2_512_context *context, uint8_t *messagePtr
 
     uint64_t W[80];
 #if HASHUTIL_SLOW
-    MemorySet((uint8_t *)W, 0, sizeof(W));
+    SHA2_MemorySet((uint8_t *)W, 0, sizeof(W));
 #endif
 
     uint64_t t1 = 0;
@@ -564,7 +619,7 @@ static void SHA2_UpdateHashSHA512(sha2_512_context *context, uint8_t *messagePtr
                 | ((uint64_t)*(messagePtr + i + (j * 8) + 7));
         }
 
-        for (int t = 16; t < ArrayCount(W); ++t)
+        for (int t = 16; t < SHA2_ArrayCount(W); ++t)
         {
             // Wt = SSIG1(W(t-2)) + W(t-7) + SSIG0(W(t-15)) + W(t-16)
             W[t] = SSIG1_SHA512(W[t-2]) + W[t-7] + SSIG0_SHA512(W[t-15]) + W[t-16];
@@ -579,7 +634,7 @@ static void SHA2_UpdateHashSHA512(sha2_512_context *context, uint8_t *messagePtr
         G = context->H6;
         H = context->H7;
 
-        for (int t = 0; t < ArrayCount(W); ++t)
+        for (int t = 0; t < SHA2_ArrayCount(W); ++t)
         {
             // T1 = h + BSIG1(e) + CH(e,f,g) + Kt + Wt
             t1 = H + BSIG1_SHA512(E) + CH_SHA512(E, F, G) + K_SHA512[t] + W[t];
@@ -612,7 +667,7 @@ static void SHA2_ConstructDigestSHA224(sha2_256_context *context)
 {
     // Assert buffer is large enough to hold a SHA224 digest
     // (224 bits in hex, plus the string null terminator character)
-    sha2_static_assert(ArrayCount(context->DigestStr) >= (224 / 4 + 1),
+    sha2_static_assert(SHA2_ArrayCount(context->DigestStr) >= (224 / 4 + 1),
                   "Buffer is not large enough to hold SHA224 digest");
 
     sprintf(context->DigestStr,
@@ -630,7 +685,7 @@ static void SHA2_ConstructDigestSHA256(sha2_256_context *context)
 {
     // Assert buffer is large enough to hold a SHA256 digest
     // (256 bits in hex, plus the string null terminator character)
-    sha2_static_assert(ArrayCount(context->DigestStr) >= (256 / 4 + 1),
+    sha2_static_assert(SHA2_ArrayCount(context->DigestStr) >= (256 / 4 + 1),
                   "Buffer is not large enough to hold SHA256 digest");
 
     sprintf(context->DigestStr,
@@ -649,7 +704,7 @@ static void SHA2_ConstructDigestSHA384(sha2_512_context *context)
 {
     // Assert buffer is large enough to hold a SHA384 digest
     // (384 bits in hex, plus the string null terminator character)
-    sha2_static_assert(ArrayCount(context->DigestStr) >= (384 / 4 + 1),
+    sha2_static_assert(SHA2_ArrayCount(context->DigestStr) >= (384 / 4 + 1),
                   "Buffer is not large enough to hold SHA384 digest");
 
     sprintf(context->DigestStr,
@@ -667,7 +722,7 @@ static void SHA2_ConstructDigestSHA512(sha2_512_context *context)
 {
     // Assert buffer is large enough to hold a SHA512 digest
     // (512 bits in hex, plus the string null terminator character)
-    sha2_static_assert(ArrayCount(context->DigestStr) >= (512 / 4 + 1),
+    sha2_static_assert(SHA2_ArrayCount(context->DigestStr) >= (512 / 4 + 1),
                   "Buffer is not large enough to hold SHA512 digest");
 
     sprintf(context->DigestStr,
@@ -686,7 +741,7 @@ static void SHA2_ConstructDigestSHA512_224(sha2_512_context *context)
 {
     // Assert buffer is large enough to hold a SHA512/224 digest
     // (224 bits in hex, plus the string null terminator character)
-    sha2_static_assert(ArrayCount(context->DigestStr) >= (224 / 4 + 1),
+    sha2_static_assert(SHA2_ArrayCount(context->DigestStr) >= (224 / 4 + 1),
                   "Buffer is not large enough to hold SHA512/224 digest");
 
     sprintf(context->DigestStr,
@@ -702,7 +757,7 @@ static void SHA2_ConstructDigestSHA512_256(sha2_512_context *context)
 {
     // Assert buffer is large enough to hold a SHA512/256 digest
     // (256 bits in hex, plus the string null terminator character)
-    sha2_static_assert(ArrayCount(context->DigestStr) >= (256 / 4 + 1),
+    sha2_static_assert(SHA2_ArrayCount(context->DigestStr) >= (256 / 4 + 1),
                   "Buffer is not large enough to hold SHA512/256 digest");
 
     sprintf(context->DigestStr,
@@ -757,7 +812,7 @@ sha2_256_context SHA2_HashStringSHA256(char *messagePtr, sha2_digest_length_256 
     sha2_message_padding_info messageInfo =
     {
         messageInfo.BufferPtr = buffer,
-        messageInfo.BufferSizeBytes = ArrayCount(buffer),
+        messageInfo.BufferSizeBytes = SHA2_ArrayCount(buffer),
         messageInfo.BlockSizeBytes = SHA2_MESSAGE_BLOCK_SHA256,
         messageInfo.MessagePtr = messagePtr,
         messageInfo.MessageSizeBytes = messageByteCount,
@@ -841,7 +896,7 @@ sha2_512_context SHA2_HashStringSHA512(char *messagePtr, sha2_digest_length_512 
     sha2_message_padding_info messageInfo =
     {
         messageInfo.BufferPtr = buffer,
-        messageInfo.BufferSizeBytes = ArrayCount(buffer),
+        messageInfo.BufferSizeBytes = SHA2_ArrayCount(buffer),
         messageInfo.BlockSizeBytes = SHA2_MESSAGE_BLOCK_SHA512,
         messageInfo.MessagePtr = messagePtr,
         messageInfo.MessageSizeBytes = messageByteCount,

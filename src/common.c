@@ -56,19 +56,19 @@ static void MirrorBits64(uint64_t *bits)
          | ((*bits << 56) & 0xff00000000000000);
 }
 
-// 32bit Circular bit shift left
+// 32-bit Circular bit shift left
 static uint32_t ROTL(uint32_t value, uint8_t count)
 {
     return (value << count) | (value >> (32 - count));
 }
 
-// 32bit Circular bit shift right
+// 32-bit Circular bit shift right
 static uint32_t ROTR32(uint32_t value, uint8_t count)
 {
     return (value >> count) | (value << (32 - count));
 }
 
-// 64bit Circular bit shift right
+// 64-bit Circular bit shift right
 static uint64_t ROTR64(uint64_t value, uint8_t count)
 {
     return (value >> count) | (value << (64 - count));

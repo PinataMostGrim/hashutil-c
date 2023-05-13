@@ -8,6 +8,7 @@
 #include "sha1.h"
 #define HASHUTIL_SHA2_IMPLEMENTATION
 #include "sha2.h"
+#include "common.c"
 
 
 static uint32_t PASSING_TESTS = 0;
