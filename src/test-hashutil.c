@@ -1,3 +1,4 @@
+#include <stdint.h>
 #include <stdio.h>
 #include <assert.h>
 
@@ -9,20 +10,28 @@
 #include "sha2.h"
 
 
+static uint32_t PASSING_TESTS = 0;
+static uint32_t FAILING_TESTS = 0;
+static bool ALL_TESTS_PASSED = true;
+
+
 static void EvaluateResult(char *messagePtr, char *targetDigest, char *digestStr)
 {
     if (strcmp(digestStr, targetDigest) == 0)
     {
         printf("SUCCEEDED: '%s' [%s]\n", messagePtr, digestStr);
-    }
-    else
-    {
-        printf("FAILED: '%s'\n", messagePtr);
-        printf("\tExpected:\t%s\n", targetDigest);
-        printf("\tReceived:\t%s\n", digestStr);
-    }
-}
+        PASSING_TESTS++;
 
+        return;
+    }
+
+    printf("FAILED: '%s'\n", messagePtr);
+    printf("\tExpected:\t%s\n", targetDigest);
+    printf("\tReceived:\t%s\n", digestStr);
+
+    ALL_TESTS_PASSED = false;
+    FAILING_TESTS++;
+}
 
 int main()
 {
@@ -281,5 +290,12 @@ int main()
     }
 #endif
 
+    if (!ALL_TESTS_PASSED)
+    {
+        printf("FAIL: %i out of %i tests failed", FAILING_TESTS, (PASSING_TESTS + FAILING_TESTS));
+        return 1;
+    }
+
+    printf("SUCCESS: %i out of %i tests succeeded", PASSING_TESTS, (PASSING_TESTS + FAILING_TESTS));
     return 0;
 }
