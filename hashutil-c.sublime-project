@@ -14,7 +14,7 @@
             "windows":
             {
                 // file_regex for cl
-                "file_regex": "^(..[^(\n]*)\\(([0-9]+)\\):():? (.*)$",
+                "file_regex": "^(..[^(\n]*)\\(([0-9]+)\\) ?:():? (.*)$",
                 "shell_cmd": "call vcvarsall.bat x64 && build-hashutil.bat",
             },
             "linux":
@@ -46,7 +46,7 @@
             "windows":
             {
                 // file_regex for cl
-                "file_regex": "^(..[^(\n]*)\\(([0-9]+)\\):():? (.*)$",
+                "file_regex": "^(..[^(\n]*)\\(([0-9]+)\\) ?:():? (.*)$",
                 "shell_cmd": "call vcvarsall.bat x64 && build-test-hashutil.bat && bin\\test-hashutil",
             },
             "linux":
