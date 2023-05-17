@@ -8,7 +8,9 @@
     - Enforce C99 in build batch files
 */
 
+#include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 #include <assert.h>
 
 #define HASHUTIL_MD5_IMPLEMENTATION
@@ -120,6 +122,13 @@ static void PrintSupportedAlgorithms()
 }
 
 
+static void PrintErrorAndExit(char *errorStr)
+{
+    printf("ERROR: %s\n", errorStr);
+    exit(1);
+}
+
+
 void ParseArgs(int argc, char const *argv[], arguments *arguments)
 {
     bool processOptionalArgs = true;
@@ -198,14 +207,14 @@ int main(int argc, char const *argv[])
     // Error out on missing or invalid arguments
     if (strlen(arguments.algorithmPtr) == 0)
     {
-        printf("'algorithm' argument missing\n");
+        printf("ERROR: 'algorithm' argument missing\n");
         PrintUsage();
         return 1;
     }
 
     if(strlen(arguments.messagePtr) == 0)
     {
-        printf("'message' argument missing\n");
+        printf("ERROR: 'message' argument missing\n");
         PrintUsage();
         return 1;
     }
@@ -262,6 +271,11 @@ int main(int argc, char const *argv[])
                 context = SHA2_HashStringSHA224(arguments.messagePtr);
             }
 
+            if (context.Error)
+            {
+                PrintErrorAndExit(context.ErrorStr);
+            }
+
             digest = context.DigestStr;
             break;
         }
@@ -275,6 +289,11 @@ int main(int argc, char const *argv[])
             else
             {
                 context = SHA2_HashStringSHA256(arguments.messagePtr);
+            }
+
+            if (context.Error)
+            {
+                PrintErrorAndExit(context.ErrorStr);
             }
 
             digest = context.DigestStr;
@@ -292,6 +311,11 @@ int main(int argc, char const *argv[])
                 context = SHA2_HashStringSHA512_224(arguments.messagePtr);
             }
 
+            if (context.Error)
+            {
+                PrintErrorAndExit(context.ErrorStr);
+            }
+
             digest = context.DigestStr;
             break;
         }
@@ -305,6 +329,11 @@ int main(int argc, char const *argv[])
             else
             {
                 context = SHA2_HashStringSHA512_256(arguments.messagePtr);
+            }
+
+            if (context.Error)
+            {
+                PrintErrorAndExit(context.ErrorStr);
             }
 
             digest = context.DigestStr;
@@ -322,6 +351,11 @@ int main(int argc, char const *argv[])
                 context = SHA2_HashStringSHA384(arguments.messagePtr);
             }
 
+            if (context.Error)
+            {
+                PrintErrorAndExit(context.ErrorStr);
+            }
+
             digest = context.DigestStr;
             break;
         }
@@ -337,12 +371,17 @@ int main(int argc, char const *argv[])
                 context = SHA2_HashStringSHA512(arguments.messagePtr);
             }
 
+            if (context.Error)
+            {
+                PrintErrorAndExit(context.ErrorStr);
+            }
+
             digest = context.DigestStr;
             break;
         }
         default:
         {
-            printf("Unsupported algorithm selected\n");
+            printf("ERROR: Unsupported algorithm selected\n");
             return 1;
         }
     }

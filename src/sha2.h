@@ -2,6 +2,7 @@
 #define HASHUTIL_SHA2_H
 
 #include <stdint.h>
+#include <stdbool.h>
 
 static uint32_t const HASHUTIL_SHA2_VERSION = 1;
 
@@ -63,12 +64,10 @@ typedef enum
 
 typedef enum
 {
-    SHA2_DIGEST_LENGTH_SHA224,
-    SHA2_DIGEST_LENGTH_SHA256,
-    SHA2_DIGEST_LENGTH_SHA512_224,
-    SHA2_DIGEST_LENGTH_SHA512_256,
-    SHA2_DIGEST_LENGTH_SHA384,
-    SHA2_DIGEST_LENGTH_SHA512,
+    SHA2_DIGEST_LENGTH_SHA224 = 224,
+    SHA2_DIGEST_LENGTH_SHA256 = 256,
+    SHA2_DIGEST_LENGTH_SHA384 = 384,
+    SHA2_DIGEST_LENGTH_SHA512 = 512,
 } sha2_digest_length;
 
 typedef struct
@@ -104,6 +103,8 @@ typedef struct
         };
     };
     char DigestStr[65];
+    bool Error;
+    char ErrorStr[64];
 } sha2_256_context;
 
 typedef struct
@@ -125,6 +126,8 @@ typedef struct
         };
     };
     char DigestStr[129];
+    bool Error;
+    char ErrorStr[64];
 } sha2_512_context;
 
 
@@ -158,7 +161,6 @@ sha2_512_context SHA2_HashFileSHA512(char *fileName);
 #ifdef HASHUTIL_SHA2_IMPLEMENTATION
 
 #include <stdio.h>
-#include <stdlib.h>
 #include <stdbool.h>
 
 #if HASHUTIL_SLOW
@@ -249,8 +251,11 @@ static void SHA2_InitializeContextSHA224(sha2_256_context *context)
     context->H[6] = 0x64f98fa7;
     context->H[7] = 0xbefa4fa4;
 
+    context->Error = false;
+
 #if HASHUTIL_SLOW
     SHA2_MemorySet((uint8_t *)context->DigestStr, 0, sizeof(context->DigestStr));
+    SHA2_MemorySet((uint8_t *)context->ErrorStr, 0, sizeof(context->ErrorStr));
 #endif
 }
 
@@ -267,8 +272,11 @@ static void SHA2_InitializeContextSHA256(sha2_256_context *context)
     context->H[6] = 0x1f83d9ab;
     context->H[7] = 0x5be0cd19;
 
+    context->Error = false;
+
 #if HASHUTIL_SLOW
     SHA2_MemorySet((uint8_t *)context->DigestStr, 0, sizeof(context->DigestStr));
+    SHA2_MemorySet((uint8_t *)context->ErrorStr, 0, sizeof(context->ErrorStr));
 #endif
 }
 
@@ -286,8 +294,11 @@ static void SHA2_InitializeContextSHA512_224(sha2_512_context *context)
     context->H[6]= 0x3f9d85a86a1d36c8;
     context->H[7]= 0x1112e6ad91d692a1;
 
+    context->Error = false;
+
 #if HASHUTIL_SLOW
     SHA2_MemorySet((uint8_t *)context->DigestStr, 0, sizeof(context->DigestStr));
+    SHA2_MemorySet((uint8_t *)context->ErrorStr, 0, sizeof(context->ErrorStr));
 #endif
 }
 
@@ -305,8 +316,11 @@ static void SHA2_InitializeContextSHA512_256(sha2_512_context *context)
     context->H[6]= 0x2b0199fc2c85b8aa;
     context->H[7]= 0x0eb72ddc81c52ca2;
 
+    context->Error = false;
+
 #if HASHUTIL_SLOW
     SHA2_MemorySet((uint8_t *)context->DigestStr, 0, sizeof(context->DigestStr));
+    SHA2_MemorySet((uint8_t *)context->ErrorStr, 0, sizeof(context->ErrorStr));
 #endif
 }
 
@@ -324,8 +338,11 @@ static void SHA2_InitializeContextSHA384(sha2_512_context *context)
     context->H[6]= 0xdb0c2e0d64f98fa7;
     context->H[7]= 0x47b5481dbefa4fa4;
 
+    context->Error = false;
+
 #if HASHUTIL_SLOW
     SHA2_MemorySet((uint8_t *)context->DigestStr, 0, sizeof(context->DigestStr));
+    SHA2_MemorySet((uint8_t *)context->ErrorStr, 0, sizeof(context->ErrorStr));
 #endif
 }
 
@@ -343,8 +360,11 @@ static void SHA2_InitializeContextSHA512(sha2_512_context *context)
     context->H[6]= 0x1f83d9abfb41bd6b;
     context->H[7]= 0x5be0cd19137e2179;
 
+    context->Error = false;
+
 #if HASHUTIL_SLOW
     SHA2_MemorySet((uint8_t *)context->DigestStr, 0, sizeof(context->DigestStr));
+    SHA2_MemorySet((uint8_t *)context->ErrorStr, 0, sizeof(context->ErrorStr));
 #endif
 }
 
@@ -781,8 +801,12 @@ sha2_256_context SHA2_HashStringSHA256_(char *messagePtr, sha2_digest_length dig
         }
         default:
         {
-            // Invalid digest length for SHA256
             sha2_assert(false);
+
+            context.Error = true;
+            sprintf(context.ErrorStr, "Invalid digest length for SHA256: %i", digestLength);
+            sprintf(context.DigestStr, "");
+            return context;
         }
     }
 
@@ -850,7 +874,7 @@ sha2_256_context SHA2_HashStringSHA256_(char *messagePtr, sha2_digest_length dig
         }
         default:
         {
-            // Invalid digest length for SHA256
+            // Invalid digest length for SHA256. We should never reach this state here.
             sha2_assert(false);
         }
     }
@@ -875,16 +899,24 @@ sha2_256_context SHA2_HashFileSHA256_(char *fileName, sha2_digest_length digestL
         }
         default:
         {
-            // Invalid digest length for SHA256
             sha2_assert(false);
+
+            context.Error = true;
+            sprintf(context.ErrorStr, "Invalid digest length for SHA256: %i", digestLength);
+            sprintf(context.DigestStr, "");
+            return context;
         }
     }
 
     FILE *file = fopen(fileName, "rb");
     if (!file)
     {
-        printf("Unable to open file '%s'", fileName);
-        exit(1);
+        sha2_assert(false);
+
+        context.Error = true;
+        sprintf(context.ErrorStr, "Unable to open file");
+        sprintf(context.DigestStr, "");
+        return context;
     }
 
     // Note (Aaron): Create a buffer that can hold two full message blocks as
@@ -925,9 +957,13 @@ sha2_256_context SHA2_HashFileSHA256_(char *fileName, sha2_digest_length digestL
 
     if (ferror(file))
     {
-        printf("Error reading file '%s'", fileName);
         fclose(file);
-        exit(1);
+        sha2_assert(false);
+
+        context.Error = true;
+        sprintf(context.ErrorStr, "Error reading file");
+        sprintf(context.DigestStr, "");
+        return context;
     }
 
     fclose(file);
@@ -964,7 +1000,7 @@ sha2_256_context SHA2_HashFileSHA256_(char *fileName, sha2_digest_length digestL
         }
         default:
         {
-            // Invalid digest length for SHA256
+            // Invalid digest length for SHA256. We should never reach this state here.
             sha2_assert(false);
         }
     }
@@ -979,26 +1015,35 @@ sha2_512_context SHA2_HashStringSHA512_(char *messagePtr, sha2_digest_length dig
 
     switch (digestLength)
     {
+        case SHA2_DIGEST_LENGTH_SHA224:
+        {
+            SHA2_InitializeContextSHA512_224(&context);
+            break;
+        }
+        case SHA2_DIGEST_LENGTH_SHA256:
+        {
+            SHA2_InitializeContextSHA512_256(&context);
+            break;
+        }
         case SHA2_DIGEST_LENGTH_SHA384:
         {
             SHA2_InitializeContextSHA384(&context);
             break;
         }
-        case SHA2_DIGEST_LENGTH_SHA512_224:
-        {
-            SHA2_InitializeContextSHA512_224(&context);
-            break;
-        }
-        case SHA2_DIGEST_LENGTH_SHA512_256:
-        {
-            SHA2_InitializeContextSHA512_256(&context);
-            break;
-        }
         case SHA2_DIGEST_LENGTH_SHA512:
-        default:
         {
             SHA2_InitializeContextSHA512(&context);
             break;
+        }
+        default:
+        {
+            sha2_assert(false);
+
+            context.Error = true;
+            sprintf(context.ErrorStr, "Invalid digest length for SHA512: %i", digestLength);
+            sprintf(context.DigestStr, "");
+
+            return context;
         }
     }
 
@@ -1054,12 +1099,12 @@ sha2_512_context SHA2_HashStringSHA512_(char *messagePtr, sha2_digest_length dig
 
     switch (digestLength)
     {
-        case SHA2_DIGEST_LENGTH_SHA512_224:
+        case SHA2_DIGEST_LENGTH_SHA224:
         {
             SHA2_ConstructDigestSHA512_224(&context);
             break;
         }
-        case SHA2_DIGEST_LENGTH_SHA512_256:
+        case SHA2_DIGEST_LENGTH_SHA256:
         {
             SHA2_ConstructDigestSHA512_256(&context);
             break;
@@ -1076,7 +1121,7 @@ sha2_512_context SHA2_HashStringSHA512_(char *messagePtr, sha2_digest_length dig
         }
         default:
         {
-            // Invalid digest length for SHA512
+            // Invalid digest length for SHA512. We should never reach this state here.
             sha2_assert(false);
         }
     }
@@ -1089,12 +1134,12 @@ sha2_512_context SHA2_HashFileSHA512_(char *fileName, sha2_digest_length digestL
     sha2_512_context context;
     switch (digestLength)
     {
-        case SHA2_DIGEST_LENGTH_SHA512_224:
+        case SHA2_DIGEST_LENGTH_SHA224:
         {
             SHA2_InitializeContextSHA512_224(&context);
             break;
         }
-        case SHA2_DIGEST_LENGTH_SHA512_256:
+        case SHA2_DIGEST_LENGTH_SHA256:
         {
             SHA2_InitializeContextSHA512_256(&context);
             break;
@@ -1111,16 +1156,24 @@ sha2_512_context SHA2_HashFileSHA512_(char *fileName, sha2_digest_length digestL
         }
         default:
         {
-            // Invalid digest length for SHA256
             sha2_assert(false);
+
+            context.Error = true;
+            sprintf(context.ErrorStr, "Invalid digest length for SHA512: %i", digestLength);
+            sprintf(context.DigestStr, "");
+            return context;
         }
     }
 
     FILE *file = fopen(fileName, "rb");
     if (!file)
     {
-        printf("Unable to open file '%s'", fileName);
-        exit(1);
+        sha2_assert(false);
+
+        context.Error = true;
+        sprintf(context.ErrorStr, "Unable to open file");
+        sprintf(context.DigestStr, "");
+        return context;
     }
 
     // Note (Aaron): Create a buffer that can hold two full message blocks as
@@ -1161,9 +1214,13 @@ sha2_512_context SHA2_HashFileSHA512_(char *fileName, sha2_digest_length digestL
 
     if (ferror(file))
     {
-        printf("Error reading file '%s'", fileName);
         fclose(file);
-        exit(1);
+        sha2_assert(false);
+
+        context.Error = true;
+        sprintf(context.ErrorStr, "Error reading file");
+        sprintf(context.DigestStr, "");
+        return context;
     }
 
     fclose(file);
@@ -1188,12 +1245,12 @@ sha2_512_context SHA2_HashFileSHA512_(char *fileName, sha2_digest_length digestL
 
     switch (digestLength)
     {
-        case SHA2_DIGEST_LENGTH_SHA512_224:
+        case SHA2_DIGEST_LENGTH_SHA224:
         {
             SHA2_ConstructDigestSHA512_224(&context);
             break;
         }
-        case SHA2_DIGEST_LENGTH_SHA512_256:
+        case SHA2_DIGEST_LENGTH_SHA256:
         {
             SHA2_ConstructDigestSHA512_256(&context);
             break;
@@ -1210,7 +1267,7 @@ sha2_512_context SHA2_HashFileSHA512_(char *fileName, sha2_digest_length digestL
         }
         default:
         {
-            // Invalid digest length for SHA512
+            // Invalid digest length for SHA512. We should never reach this state here.
             sha2_assert(false);
         }
     }
@@ -1242,12 +1299,12 @@ sha2_256_context SHA2_HashFileSHA256(char *fileName)
 
 sha2_512_context SHA2_HashStringSHA512_224(char *messagePtr)
 {
-    return SHA2_HashStringSHA512_(messagePtr, SHA2_DIGEST_LENGTH_SHA512_224);
+    return SHA2_HashStringSHA512_(messagePtr, SHA2_DIGEST_LENGTH_SHA224);
 }
 
 sha2_512_context SHA2_HashStringSHA512_256(char *messagePtr)
 {
-    return SHA2_HashStringSHA512_(messagePtr, SHA2_DIGEST_LENGTH_SHA512_256);
+    return SHA2_HashStringSHA512_(messagePtr, SHA2_DIGEST_LENGTH_SHA256);
 }
 
 sha2_512_context SHA2_HashStringSHA384(char *messagePtr)
@@ -1262,12 +1319,12 @@ sha2_512_context SHA2_HashStringSHA512(char *messagePtr)
 
 sha2_512_context SHA2_HashFileSHA512_224(char *fileName)
 {
-    return SHA2_HashFileSHA512_(fileName, SHA2_DIGEST_LENGTH_SHA512_224);
+    return SHA2_HashFileSHA512_(fileName, SHA2_DIGEST_LENGTH_SHA224);
 }
 
 sha2_512_context SHA2_HashFileSHA512_256(char *fileName)
 {
-    return SHA2_HashFileSHA512_(fileName, SHA2_DIGEST_LENGTH_SHA512_256);
+    return SHA2_HashFileSHA512_(fileName, SHA2_DIGEST_LENGTH_SHA256);
 }
 
 sha2_512_context SHA2_HashFileSHA384(char *fileName)
