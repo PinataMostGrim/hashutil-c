@@ -78,9 +78,8 @@ typedef enum sha2_digest_length_512
 typedef struct sha2_message_padding_info
 {
     uint8_t *BufferPtr;
-    uint32_t BufferSizeBytes;
+    size_t BufferSizeBytes;
     sha2_message_block_size_bytes BlockSizeBytes;
-    char *MessagePtr;
     uint64_t MessageSizeBytes;
     sha2_message_length_block_size_bytes MessageLengthBlockSizeBytes;
 
@@ -440,19 +439,7 @@ void SHA2_ApplyPadding(sha2_message_padding_info messageInfo)
     // Message + padding + message length bits need to fit within the buffer
     sha2_assert(messageInfo.MessageSizeBytes <= (messageInfo.BufferSizeBytes - messageInfo.MessageLengthBlockSizeBytes - 1));
 
-#if HASHUTIL_SLOW
-    // Note (Aaron): Useful for debug purposes to pack the buffer's bits with 1s
-    SHA2_MemorySet((uint8_t *)messageInfo.BufferPtr, 0xff, messageInfo.BufferSizeBytes);
-#endif
-
     bool useFullBuffer = messageInfo.MessageSizeBytes > (messageInfo.BlockSizeBytes - messageInfo.MessageLengthBlockSizeBytes - 1);
-
-    // Apply the final hash update with padding
-    // Copy message remainder (if any) into buffer
-    if (messageInfo.MessageSizeBytes > 0)
-    {
-        SHA2_MemoryCopy(messageInfo.BufferPtr, (uint8_t *)(messageInfo.MessagePtr - messageInfo.MessageSizeBytes), messageInfo.MessageSizeBytes);
-    }
 
     // Apply padded 1
     uint8_t *paddingPtr = messageInfo.BufferPtr + messageInfo.MessageSizeBytes;
@@ -810,25 +797,37 @@ sha2_256_context SHA2_HashStringSHA256(char *messagePtr, sha2_digest_length_256 
     }
 
     // Allocate a buffer to store the final message block
+    size_t bufferSizeBytes = SHA2_MESSAGE_BLOCK_SHA256 * 2;
     uint8_t buffer[SHA2_MESSAGE_BLOCK_SHA256 * 2];
+
+#if HASHUTIL_SLOW
+    // Note (Aaron): Useful for debug purposes to pack the buffer's bits with 1s
+    SHA2_MemorySet(buffer, 0xff, bufferSizeBytes);
+#endif
+
+    // Copy message remainder (if any) into buffer
+    if (messageByteCount > 0)
+    {
+        SHA2_MemoryCopy(buffer, (uint8_t *)(messagePtr - messageByteCount), messageByteCount);
+    }
 
     // Apply padding to the final message block(s)
     sha2_message_padding_info messageInfo =
     {
         messageInfo.BufferPtr = buffer,
-        messageInfo.BufferSizeBytes = SHA2_ArrayCount(buffer),
+        messageInfo.BufferSizeBytes = bufferSizeBytes,
         messageInfo.BlockSizeBytes = SHA2_MESSAGE_BLOCK_SHA256,
-        messageInfo.MessagePtr = messagePtr,
         messageInfo.MessageSizeBytes = messageByteCount,
         messageInfo.MessageLengthBlockSizeBytes = SHA2_MESSAGE_LENGTH_BLOCK_SHA256,
         messageInfo.MessageLengthBitsHigh = 0,
         messageInfo.MessageLengthBitsLow = context.MessageLengthBits,
     };
+
     SHA2_ApplyPadding(messageInfo);
 
     // Apply final hash computation
     bool useFullBuffer = messageByteCount > (SHA2_MESSAGE_BLOCK_SHA256 - SHA2_MESSAGE_LENGTH_BLOCK_SHA256 - 1);
-    messageByteCount = useFullBuffer ? (SHA2_MESSAGE_BLOCK_SHA256 * 2) : SHA2_MESSAGE_BLOCK_SHA256;
+    messageByteCount = useFullBuffer ? (bufferSizeBytes) : SHA2_MESSAGE_BLOCK_SHA256;
     SHA2_UpdateHashSHA256(&context, (uint8_t *)buffer, messageByteCount);
 
     switch (digestLength)
@@ -850,7 +849,7 @@ sha2_256_context SHA2_HashStringSHA256(char *messagePtr, sha2_digest_length_256 
 sha2_512_context SHA2_HashStringSHA512(char *messagePtr, sha2_digest_length_512 digestLength)
 {
     sha2_512_context context;
-    uint16_t messageByteCount = 0;
+    size_t messageByteCount = 0;
 
     switch (digestLength)
     {
@@ -894,27 +893,38 @@ sha2_512_context SHA2_HashStringSHA512(char *messagePtr, sha2_digest_length_512 
     }
 
     // Allocate a buffer to store the final message block
+    size_t bufferSizeBytes = SHA2_MESSAGE_BLOCK_SHA512 * 2;
     uint8_t buffer[SHA2_MESSAGE_BLOCK_SHA512 * 2];
+
+#if HASHUTIL_SLOW
+    // Note (Aaron): Useful for debug purposes to pack the buffer's bits with 1s
+    SHA2_MemorySet(buffer, 0xff, bufferSizeBytes);
+#endif
+
+    // Copy message remainder (if any) into buffer
+    if (messageByteCount > 0)
+    {
+        SHA2_MemoryCopy(buffer, (uint8_t *)(messagePtr - messageByteCount), messageByteCount);
+    }
 
     // Apply padding to the final message blocks(s)
     sha2_message_padding_info messageInfo =
     {
         messageInfo.BufferPtr = buffer,
-        messageInfo.BufferSizeBytes = SHA2_ArrayCount(buffer),
+        messageInfo.BufferSizeBytes = bufferSizeBytes,
         messageInfo.BlockSizeBytes = SHA2_MESSAGE_BLOCK_SHA512,
-        messageInfo.MessagePtr = messagePtr,
         messageInfo.MessageSizeBytes = messageByteCount,
         messageInfo.MessageLengthBlockSizeBytes = SHA2_MESSAGE_LENGTH_BLOCK_SHA512,
         messageInfo.MessageLengthBitsHigh = context.MessageLengthBits.High,
         messageInfo.MessageLengthBitsLow = context.MessageLengthBits.Low,
     };
+
     SHA2_ApplyPadding(messageInfo);
 
     // Apply final hash computation
     bool useFullBuffer = messageByteCount > (SHA2_MESSAGE_BLOCK_SHA512 - SHA2_MESSAGE_LENGTH_BLOCK_SHA512 - 1);
-    messageByteCount = useFullBuffer ? (SHA2_MESSAGE_BLOCK_SHA512 * 2) : SHA2_MESSAGE_BLOCK_SHA512;
+    messageByteCount = useFullBuffer ? (bufferSizeBytes) : SHA2_MESSAGE_BLOCK_SHA512;
     SHA2_UpdateHashSHA512(&context, (uint8_t *)buffer, messageByteCount);
-
 
     switch (digestLength)
     {
