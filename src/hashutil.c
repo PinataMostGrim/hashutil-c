@@ -253,11 +253,11 @@ int main(int argc, char const *argv[])
         case hash_sha224:
         {
             sha2_256_context context;
-            // if(arguments.fileFlag)
-            // {
-            //     context = SHA2_HashFileSHA256_224(arguments.messagePtr);
-            // }
-            // else
+            if(arguments.fileFlag)
+            {
+                context = SHA2_HashFileSHA224(arguments.messagePtr);
+            }
+            else
             {
                 context = SHA2_HashStringSHA224(arguments.messagePtr);
             }
@@ -268,11 +268,11 @@ int main(int argc, char const *argv[])
         case hash_sha256:
         {
             sha2_256_context context;
-            // if(arguments.fileFlag)
-            // {
-            //     context = MD5HashFile(arguments.messagePtr);
-            // }
-            // else
+            if(arguments.fileFlag)
+            {
+                context = SHA2_HashFileSHA256(arguments.messagePtr);
+            }
+            else
             {
                 context = SHA2_HashStringSHA256(arguments.messagePtr);
             }
@@ -283,11 +283,11 @@ int main(int argc, char const *argv[])
         case hash_sha512_224:
         {
             sha2_512_context context;
-            // if(arguments.fileFlag)
-            // {
-            //     context = MD5HashFile(arguments.messagePtr);
-            // }
-            // else
+            if(arguments.fileFlag)
+            {
+                context = SHA2_HashFileSHA512_224(arguments.messagePtr);
+            }
+            else
             {
                 context = SHA2_HashStringSHA512_224(arguments.messagePtr);
             }
@@ -298,11 +298,11 @@ int main(int argc, char const *argv[])
         case hash_sha512_256:
         {
             sha2_512_context context;
-            // if(arguments.fileFlag)
-            // {
-            //     context = MD5HashFile(arguments.messagePtr);
-            // }
-            // else
+            if(arguments.fileFlag)
+            {
+                context = SHA2_HashFileSHA512_256(arguments.messagePtr);
+            }
+            else
             {
                 context = SHA2_HashStringSHA512_256(arguments.messagePtr);
             }
@@ -313,11 +313,11 @@ int main(int argc, char const *argv[])
         case hash_sha384:
         {
             sha2_512_context context;
-            // if(arguments.fileFlag)
-            // {
-            //     context = MD5HashFile(arguments.messagePtr);
-            // }
-            // else
+            if(arguments.fileFlag)
+            {
+                context = SHA2_HashFileSHA384(arguments.messagePtr);
+            }
+            else
             {
                 context = SHA2_HashStringSHA384(arguments.messagePtr);
             }
@@ -328,11 +328,11 @@ int main(int argc, char const *argv[])
         case hash_sha512:
         {
             sha2_512_context context;
-            // if(arguments.fileFlag)
-            // {
-            //     context = MD5HashFile(arguments.messagePtr);
-            // }
-            // else
+            if(arguments.fileFlag)
+            {
+                context = SHA2_HashFileSHA512(arguments.messagePtr);
+            }
+            else
             {
                 context = SHA2_HashStringSHA512(arguments.messagePtr);
             }
