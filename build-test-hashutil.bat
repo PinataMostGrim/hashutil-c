@@ -2,6 +2,9 @@
 
 @echo off
 
+:: Set a variable for tracking build failure
+set "BUILD_FAILED="
+
 :: NOTE: Set %DEBUG% to 1 for debug build
 IF [%DEBUG%] == [1] (
     :: Making debug build
@@ -21,4 +24,8 @@ pushd %BuildFolder%
 :: Compile test runner
 del *.pdb > NUL 2> NUL
 cl %CompilerFlags% "..\src\test-hashutil.c" /link %LinkerFlags%
+if %ERRORLEVEL% neq 0 (set "BUILD_FAILED=false")
 popd
+
+:: Exit with error if compiling fails
+if defined BUILD_FAILED (exit /b 1 )
