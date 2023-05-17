@@ -56,6 +56,8 @@ int main()
     {
         printf("MD5 hash tests:\n");
 
+        md5_context md5Context;
+
         char *md5MessageTargetDigests[] =
         {
             "d41d8cd98f00b204e9800998ecf8427e",
@@ -78,7 +80,6 @@ int main()
                       "Mismatched number of files and target digests for MD5");
 
         // Test string hashing
-        md5_context md5Context;
         for (int i = 0; i < ArrayCount(messages); ++i)
         {
             md5Context = MD5HashString(messages[i]);
@@ -100,6 +101,8 @@ int main()
 #if 1
     {
         printf("SHA1 hash tests:\n");
+
+        sha1_context sha1Context;
 
         char *sha1MessageTargetDigests[] =
         {
@@ -123,7 +126,6 @@ int main()
                       "Mismatched number of files and target digests for SHA1");
 
         // Test string hashing
-        sha1_context sha1Context;
         for (int i = 0; i < ArrayCount(messages); ++i)
         {
             sha1Context = SHA1HashString(messages[i]);
@@ -146,6 +148,8 @@ int main()
     {
         printf("SHA224 hash tests:\n");
 
+        sha2_256_context sha256Context;
+
         char *sha224MessageTargetDigests[] =
         {
             "d14a028c2a3a2bc9476102bb288234c415a2b01f828ea62ac5b3e42f",
@@ -155,15 +159,27 @@ int main()
             "9e04184fee6c5497488121d85dd19df057a05aae5e1bac5a17789fe8",
         };
 
+        char *sha224FileTargetDigests[] =
+        {
+            "c02d67484dba7f2752cbc770a764968ef8165ebc0a6bdc38c072ca68",
+            "d14a028c2a3a2bc9476102bb288234c415a2b01f828ea62ac5b3e42f",
+        };
+
         static_assert(ArrayCount(messages) == ArrayCount(sha224MessageTargetDigests),
                       "Mismatched number of messages and target digests for SHA224");
 
         // Hash strings
-        sha2_256_context sha256Context;
         for (int i = 0; i < ArrayCount(messages); ++i)
         {
             sha256Context = SHA2_HashStringSHA256_224(messages[i]);
             EvaluateResult(messages[i], sha224MessageTargetDigests[i], sha256Context.DigestStr);
+        }
+
+        // Test file hashing
+        for (int i = 0; i < ArrayCount(filenames); ++i)
+        {
+            sha256Context = SHA2_HashFileSHA256_224(filenames[i]);
+            EvaluateResult(filenames[i], sha224FileTargetDigests[i], sha256Context.DigestStr);
         }
 
         printf("\n");
@@ -180,6 +196,12 @@ int main()
             "5e471d49eef9c7f859044d9ef2d31175d94384953f842ba02e20e06b77946408",
         };
 
+        char *sha256FileTargetDigests[] =
+        {
+            "1821202d3724f9648427c0bc74433e0f21d7e7293ab5da8c734bacb673f0c304",
+            "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        };
+
         static_assert(ArrayCount(messages) == ArrayCount(sha256MessageTargetDigests),
                       "Mismatched number of messages and target digests for SHA256");
 
@@ -190,6 +212,13 @@ int main()
             EvaluateResult(messages[i], sha256MessageTargetDigests[i], sha256Context.DigestStr);
         }
 
+        // Test file hashing
+        for (int i = 0; i < ArrayCount(filenames); ++i)
+        {
+            sha256Context = SHA2_HashFileSHA256_256(filenames[i]);
+            EvaluateResult(filenames[i], sha256FileTargetDigests[i], sha256Context.DigestStr);
+        }
+
         printf("\n");
     }
 #endif
@@ -197,6 +226,8 @@ int main()
 #if 1
     {
         printf("SHA384 hash tests:\n");
+
+        sha2_512_context sha512Context;
 
         char *sha384MessageTargetDigests[] =
         {
@@ -211,7 +242,6 @@ int main()
                       "Mismatched number of messages and target digests for SHA384");
 
         // Test string hashing
-        sha2_512_context sha512Context;
         for (int i = 0; i < ArrayCount(messages); ++i)
         {
             sha512Context = SHA2_HashStringSHA512_384(messages[i]);

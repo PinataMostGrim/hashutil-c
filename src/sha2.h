@@ -80,7 +80,7 @@ typedef struct sha2_message_padding_info
     uint8_t *BufferPtr;
     size_t BufferSizeBytes;
     sha2_message_block_size_bytes BlockSizeBytes;
-    uint64_t MessageSizeBytes;
+    uint64_t MessageRemainderSizeBytes;
     sha2_message_length_block_size_bytes MessageLengthBlockSizeBytes;
 
     // Note (Aaron): Total message size in bits. SHA512 supports message lengths stored in
@@ -139,6 +139,9 @@ extern "C" {
 uint32_t SHA2_GetVersion();
 sha2_256_context SHA2_HashStringSHA256_224(char *messagePtr);
 sha2_256_context SHA2_HashStringSHA256_256(char *messagePtr);
+sha2_256_context SHA2_HashFileSHA256_224(char *fileName);
+sha2_256_context SHA2_HashFileSHA256_256(char *fileName);
+
 sha2_512_context SHA2_HashStringSHA512_384(char *messagePtr);
 sha2_512_context SHA2_HashStringSHA512_512(char *messagePtr);
 sha2_512_context SHA2_HashStringSHA512_224(char *messagePtr);
@@ -155,6 +158,7 @@ sha2_512_context SHA2_HashStringSHA512_256(char *messagePtr);
 #ifdef HASHUTIL_SHA2_IMPLEMENTATION
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <stdbool.h>
 
 #if HASHUTIL_SLOW
@@ -437,12 +441,12 @@ void SHA2_ApplyPadding(sha2_message_padding_info messageInfo)
     sha2_assert(messageInfo.BufferSizeBytes / messageInfo.BlockSizeBytes == 2);
 
     // Message + padding + message length bits need to fit within the buffer
-    sha2_assert(messageInfo.MessageSizeBytes <= (messageInfo.BufferSizeBytes - messageInfo.MessageLengthBlockSizeBytes - 1));
+    sha2_assert(messageInfo.MessageLengthBlockSizeBytes <= (messageInfo.BufferSizeBytes - messageInfo.MessageLengthBlockSizeBytes - 1));
 
-    bool useFullBuffer = messageInfo.MessageSizeBytes > (messageInfo.BlockSizeBytes - messageInfo.MessageLengthBlockSizeBytes - 1);
+    bool useFullBuffer = messageInfo.MessageRemainderSizeBytes > (messageInfo.BlockSizeBytes - messageInfo.MessageLengthBlockSizeBytes - 1);
 
     // Apply padded 1
-    uint8_t *paddingPtr = messageInfo.BufferPtr + messageInfo.MessageSizeBytes;
+    uint8_t *paddingPtr = messageInfo.BufferPtr + messageInfo.MessageRemainderSizeBytes;
     *paddingPtr++ = (1 << 7);
 
     // Apply padded 0s
@@ -763,7 +767,7 @@ static void SHA2_ConstructDigestSHA512_256(sha2_512_context *context)
 sha2_256_context SHA2_HashStringSHA256(char *messagePtr, sha2_digest_length_256 digestLength)
 {
     sha2_256_context context;
-    uint64_t messageByteCount = 0;
+    uint64_t messageBlockByteCount = 0;
 
     switch (digestLength)
     {
@@ -782,17 +786,17 @@ sha2_256_context SHA2_HashStringSHA256(char *messagePtr, sha2_digest_length_256 
 
     while (*messagePtr != 0x00)
     {
-        sha2_assert(messageByteCount < SHA2_MESSAGE_BLOCK_SHA256);
+        sha2_assert(messageBlockByteCount < SHA2_MESSAGE_BLOCK_SHA256);
 
         messagePtr++;
-        messageByteCount++;
+        messageBlockByteCount++;
         context.MessageLengthBits += 8;
 
         // Process the message in blocks of 512 bits (64 bytes or sixteen 32-bit words)
-        if (messageByteCount == SHA2_MESSAGE_BLOCK_SHA256)
+        if (messageBlockByteCount == SHA2_MESSAGE_BLOCK_SHA256)
         {
-            SHA2_UpdateHashSHA256(&context, (uint8_t *)messagePtr - messageByteCount, messageByteCount);
-            messageByteCount = 0;
+            SHA2_UpdateHashSHA256(&context, (uint8_t *)messagePtr - messageBlockByteCount, messageBlockByteCount);
+            messageBlockByteCount = 0;
         }
     }
 
@@ -806,9 +810,9 @@ sha2_256_context SHA2_HashStringSHA256(char *messagePtr, sha2_digest_length_256 
 #endif
 
     // Copy message remainder (if any) into buffer
-    if (messageByteCount > 0)
+    if (messageBlockByteCount > 0)
     {
-        SHA2_MemoryCopy(buffer, (uint8_t *)(messagePtr - messageByteCount), messageByteCount);
+        SHA2_MemoryCopy(buffer, (uint8_t *)(messagePtr - messageBlockByteCount), messageBlockByteCount);
     }
 
     // Apply padding to the final message block(s)
@@ -817,7 +821,7 @@ sha2_256_context SHA2_HashStringSHA256(char *messagePtr, sha2_digest_length_256 
         messageInfo.BufferPtr = buffer,
         messageInfo.BufferSizeBytes = bufferSizeBytes,
         messageInfo.BlockSizeBytes = SHA2_MESSAGE_BLOCK_SHA256,
-        messageInfo.MessageSizeBytes = messageByteCount,
+        messageInfo.MessageRemainderSizeBytes = messageBlockByteCount,
         messageInfo.MessageLengthBlockSizeBytes = SHA2_MESSAGE_LENGTH_BLOCK_SHA256,
         messageInfo.MessageLengthBitsHigh = 0,
         messageInfo.MessageLengthBitsLow = context.MessageLengthBits,
@@ -826,9 +830,9 @@ sha2_256_context SHA2_HashStringSHA256(char *messagePtr, sha2_digest_length_256 
     SHA2_ApplyPadding(messageInfo);
 
     // Apply final hash computation
-    bool useFullBuffer = messageByteCount > (SHA2_MESSAGE_BLOCK_SHA256 - SHA2_MESSAGE_LENGTH_BLOCK_SHA256 - 1);
-    messageByteCount = useFullBuffer ? (bufferSizeBytes) : SHA2_MESSAGE_BLOCK_SHA256;
-    SHA2_UpdateHashSHA256(&context, (uint8_t *)buffer, messageByteCount);
+    bool useFullBuffer = messageBlockByteCount > (SHA2_MESSAGE_BLOCK_SHA256 - SHA2_MESSAGE_LENGTH_BLOCK_SHA256 - 1);
+    messageBlockByteCount = useFullBuffer ? (bufferSizeBytes) : SHA2_MESSAGE_BLOCK_SHA256;
+    SHA2_UpdateHashSHA256(&context, (uint8_t *)buffer, messageBlockByteCount);
 
     switch (digestLength)
     {
@@ -846,10 +850,116 @@ sha2_256_context SHA2_HashStringSHA256(char *messagePtr, sha2_digest_length_256 
     }
 }
 
+sha2_256_context SHA2_HashFileSHA256(char *fileName, sha2_digest_length_256 digestLength)
+{
+    sha2_256_context context;
+    switch (digestLength)
+    {
+        case SHA2_SHA256_224:
+        {
+            SHA2_InitializeContextSHA224(&context);
+            break;
+        }
+        case SHA2_SHA256_256:
+        default:
+        {
+            SHA2_InitializeContextSHA256(&context);
+            break;
+        }
+    }
+
+    FILE *file = fopen(fileName, "rb");
+    if (!file)
+    {
+        printf("Unable to open file '%s'", fileName);
+        exit(1);
+    }
+
+    // Note (Aaron): Create a buffer that can hold two full message blocks as
+    // we will potentially use the extra space when applying padding later.
+    size_t bufferSizeBytes = SHA2_MESSAGE_BLOCK_SHA256 * 2;
+    uint8_t buffer[SHA2_MESSAGE_BLOCK_SHA256 * 2];
+    uint8_t *bufferPtr = buffer;
+
+#if HASHUTIL_SLOW
+    SHA2_MemorySet(bufferPtr, 0, bufferSizeBytes);
+#endif
+
+    size_t readElementSize = sizeof(uint8_t);
+    size_t readBlockSize = sizeof(uint8_t) * SHA2_MESSAGE_BLOCK_SHA256;
+    uint64_t blockBytesRead = 0;
+
+    // Note (Aaron): Sanity check
+    sha2_assert(readElementSize == 1);
+
+    // Update hash using file contents until we run out of blocks of sufficient size
+    blockBytesRead = fread(buffer, readElementSize, readBlockSize, file);
+    while(blockBytesRead)
+    {
+        sha2_assert(blockBytesRead <= SHA2_MESSAGE_BLOCK_SHA256);
+
+        context.MessageLengthBits += (blockBytesRead * 8);
+        if(blockBytesRead == SHA2_MESSAGE_BLOCK_SHA256)
+        {
+            SHA2_UpdateHashSHA256(&context, bufferPtr, blockBytesRead);
+            blockBytesRead = fread(buffer, readElementSize, readBlockSize, file);
+            continue;
+        }
+
+        // Note (Aaron): If we ever read less bytes than SHA2_MESSAGE_LENGTH_BLOCK_SHA256,
+        // it is time to stop reading the file and apply padding.
+        break;
+    }
+
+    if (ferror(file))
+    {
+        printf("Error reading file '%s'", fileName);
+        fclose(file);
+        exit(1);
+    }
+
+    fclose(file);
+
+    // Apply the final hash update with padding
+    sha2_message_padding_info messageInfo =
+    {
+        messageInfo.BufferPtr = buffer,
+        messageInfo.BufferSizeBytes = bufferSizeBytes,
+        messageInfo.BlockSizeBytes = SHA2_MESSAGE_BLOCK_SHA256,
+        messageInfo.MessageRemainderSizeBytes = blockBytesRead,
+        messageInfo.MessageLengthBlockSizeBytes = SHA2_MESSAGE_LENGTH_BLOCK_SHA256,
+        messageInfo.MessageLengthBitsHigh = 0,
+        messageInfo.MessageLengthBitsLow = context.MessageLengthBits,
+    };
+
+    SHA2_ApplyPadding(messageInfo);
+
+    bool useFullBuffer = blockBytesRead > (SHA2_MESSAGE_BLOCK_SHA256 - SHA2_MESSAGE_LENGTH_BLOCK_SHA256 - 1);
+    blockBytesRead = useFullBuffer ? (bufferSizeBytes) : SHA2_MESSAGE_BLOCK_SHA256;
+    SHA2_UpdateHashSHA256(&context, buffer, blockBytesRead);
+
+    switch (digestLength)
+    {
+        case SHA2_SHA256_224:
+        {
+            SHA2_ConstructDigestSHA224(&context);
+            break;
+        }
+        case SHA2_SHA256_256:
+        default:
+        {
+            SHA2_ConstructDigestSHA256(&context);
+            break;
+        }
+    }
+
+    return context;
+}
+
 sha2_512_context SHA2_HashStringSHA512(char *messagePtr, sha2_digest_length_512 digestLength)
 {
     sha2_512_context context;
-    size_t messageByteCount = 0;
+    size_t messageBlockByteCount = 0;
 
     switch (digestLength)
     {
@@ -878,17 +988,17 @@ sha2_512_context SHA2_HashStringSHA512(char *messagePtr, sha2_digest_length_512 
 
     while (*messagePtr != 0x00)
     {
-        sha2_assert(messageByteCount < SHA2_MESSAGE_BLOCK_SHA512);
+        sha2_assert(messageBlockByteCount < SHA2_MESSAGE_BLOCK_SHA512);
 
         messagePtr++;
-        messageByteCount++;
+        messageBlockByteCount++;
         IncrementUINT128(&context.MessageLengthBits, 8);
 
         // Process the message in blocks of 1024 bits (128 bytes or sixteen 64-bit words)
-        if (messageByteCount == SHA2_MESSAGE_BLOCK_SHA512)
+        if (messageBlockByteCount == SHA2_MESSAGE_BLOCK_SHA512)
         {
-            SHA2_UpdateHashSHA512(&context, (uint8_t *)messagePtr - messageByteCount, messageByteCount);
-            messageByteCount = 0;
+            SHA2_UpdateHashSHA512(&context, (uint8_t *)messagePtr - messageBlockByteCount, messageBlockByteCount);
+            messageBlockByteCount = 0;
         }
     }
 
@@ -902,9 +1012,9 @@ sha2_512_context SHA2_HashStringSHA512(char *messagePtr, sha2_digest_length_512 
 #endif
 
     // Copy message remainder (if any) into buffer
-    if (messageByteCount > 0)
+    if (messageBlockByteCount > 0)
     {
-        SHA2_MemoryCopy(buffer, (uint8_t *)(messagePtr - messageByteCount), messageByteCount);
+        SHA2_MemoryCopy(buffer, (uint8_t *)(messagePtr - messageBlockByteCount), messageBlockByteCount);
     }
 
     // Apply padding to the final message blocks(s)
@@ -913,7 +1023,7 @@ sha2_512_context SHA2_HashStringSHA512(char *messagePtr, sha2_digest_length_512 
         messageInfo.BufferPtr = buffer,
         messageInfo.BufferSizeBytes = bufferSizeBytes,
         messageInfo.BlockSizeBytes = SHA2_MESSAGE_BLOCK_SHA512,
-        messageInfo.MessageSizeBytes = messageByteCount,
+        messageInfo.MessageRemainderSizeBytes = messageBlockByteCount,
         messageInfo.MessageLengthBlockSizeBytes = SHA2_MESSAGE_LENGTH_BLOCK_SHA512,
         messageInfo.MessageLengthBitsHigh = context.MessageLengthBits.High,
         messageInfo.MessageLengthBitsLow = context.MessageLengthBits.Low,
@@ -922,9 +1032,9 @@ sha2_512_context SHA2_HashStringSHA512(char *messagePtr, sha2_digest_length_512 
     SHA2_ApplyPadding(messageInfo);
 
     // Apply final hash computation
-    bool useFullBuffer = messageByteCount > (SHA2_MESSAGE_BLOCK_SHA512 - SHA2_MESSAGE_LENGTH_BLOCK_SHA512 - 1);
-    messageByteCount = useFullBuffer ? (bufferSizeBytes) : SHA2_MESSAGE_BLOCK_SHA512;
-    SHA2_UpdateHashSHA512(&context, (uint8_t *)buffer, messageByteCount);
+    bool useFullBuffer = messageBlockByteCount > (SHA2_MESSAGE_BLOCK_SHA512 - SHA2_MESSAGE_LENGTH_BLOCK_SHA512 - 1);
+    messageBlockByteCount = useFullBuffer ? (bufferSizeBytes) : SHA2_MESSAGE_BLOCK_SHA512;
+    SHA2_UpdateHashSHA512(&context, (uint8_t *)buffer, messageBlockByteCount);
 
     switch (digestLength)
     {
@@ -962,6 +1072,16 @@ sha2_256_context SHA2_HashStringSHA256_224(char *messagePtr)
 sha2_256_context SHA2_HashStringSHA256_256(char *messagePtr)
 {
     return SHA2_HashStringSHA256(messagePtr, SHA2_SHA256_256);
+}
+
+sha2_256_context SHA2_HashFileSHA256_224(char *fileName)
+{
+    return SHA2_HashFileSHA256(fileName, SHA2_SHA256_224);
+}
+
+sha2_256_context SHA2_HashFileSHA256_256(char *fileName)
+{
+    return SHA2_HashFileSHA256(fileName, SHA2_SHA256_256);
 }
 
 sha2_512_context SHA2_HashStringSHA512_384(char *messagePtr)
