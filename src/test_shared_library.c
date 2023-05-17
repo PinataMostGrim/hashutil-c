@@ -34,7 +34,7 @@ int main(int argc, char const *argv[])
     printf("sha2.h version: %i\n", sha2Version);
 
     messagePtr = (char *)"abcde";
-    sha2_256_context sha256Context = SHA2_HashStringSHA256_256(messagePtr);
+    sha2_256_context sha256Context = SHA2_HashStringSHA256(messagePtr);
     printf("sha256 digest for 'abcde': %s\n", sha256Context.DigestStr);
     printf("\n");
 

@@ -174,14 +174,14 @@ int main()
         // Hash strings
         for (int i = 0; i < ArrayCount(messages); ++i)
         {
-            sha256Context = SHA2_HashStringSHA256_224(messages[i]);
+            sha256Context = SHA2_HashStringSHA224(messages[i]);
             EvaluateResult(messages[i], sha224MessageTargetDigests[i], sha256Context.DigestStr);
         }
 
         // Test file hashing
         for (int i = 0; i < ArrayCount(filenames); ++i)
         {
-            sha256Context = SHA2_HashFileSHA256_224(filenames[i]);
+            sha256Context = SHA2_HashFileSHA224(filenames[i]);
             EvaluateResult(filenames[i], sha224FileTargetDigests[i], sha256Context.DigestStr);
         }
 
@@ -214,14 +214,14 @@ int main()
         // Test string hashing
         for (int i = 0; i < ArrayCount(messages); ++i)
         {
-            sha256Context = SHA2_HashStringSHA256_256(messages[i]);
+            sha256Context = SHA2_HashStringSHA256(messages[i]);
             EvaluateResult(messages[i], sha256MessageTargetDigests[i], sha256Context.DigestStr);
         }
 
         // Test file hashing
         for (int i = 0; i < ArrayCount(filenames); ++i)
         {
-            sha256Context = SHA2_HashFileSHA256_256(filenames[i]);
+            sha256Context = SHA2_HashFileSHA256(filenames[i]);
             EvaluateResult(filenames[i], sha256FileTargetDigests[i], sha256Context.DigestStr);
         }
 
@@ -337,14 +337,14 @@ int main()
         // Test string hashing
         for (int i = 0; i < ArrayCount(messages); ++i)
         {
-            sha512Context = SHA2_HashStringSHA512_384(messages[i]);
+            sha512Context = SHA2_HashStringSHA384(messages[i]);
             EvaluateResult(messages[i], sha384MessageTargetDigests[i], sha512Context.DigestStr);
         }
 
         // Test file hashing
         for (int i = 0; i < ArrayCount(filenames); ++i)
         {
-            sha512Context = SHA2_HashFileSHA512_384(filenames[i]);
+            sha512Context = SHA2_HashFileSHA384(filenames[i]);
             EvaluateResult(filenames[i], sha384FileTargetDigests[i], sha512Context.DigestStr);
         }
 
@@ -376,14 +376,14 @@ int main()
         // Test string hashing
         for (int i = 0; i < ArrayCount(messages); ++i)
         {
-            sha512Context = SHA2_HashStringSHA512_512(messages[i]);
+            sha512Context = SHA2_HashStringSHA512(messages[i]);
             EvaluateResult(messages[i], sha512MessageTargetDigests[i], sha512Context.DigestStr);
         }
 
         // Test file hashing
         for (int i = 0; i < ArrayCount(filenames); ++i)
         {
-            sha512Context = SHA2_HashFileSHA512_512(filenames[i]);
+            sha512Context = SHA2_HashFileSHA512(filenames[i]);
             EvaluateResult(filenames[i], sha512FileTargetDigests[i], sha512Context.DigestStr);
         }
 

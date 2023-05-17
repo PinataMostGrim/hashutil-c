@@ -259,7 +259,7 @@ int main(int argc, char const *argv[])
             // }
             // else
             {
-                context = SHA2_HashStringSHA256_224(arguments.messagePtr);
+                context = SHA2_HashStringSHA224(arguments.messagePtr);
             }
 
             digest = context.DigestStr;
@@ -274,37 +274,7 @@ int main(int argc, char const *argv[])
             // }
             // else
             {
-                context = SHA2_HashStringSHA256_256(arguments.messagePtr);
-            }
-
-            digest = context.DigestStr;
-            break;
-        }
-        case hash_sha384:
-        {
-            sha2_512_context context;
-            // if(arguments.fileFlag)
-            // {
-            //     context = MD5HashFile(arguments.messagePtr);
-            // }
-            // else
-            {
-                context = SHA2_HashStringSHA512_384(arguments.messagePtr);
-            }
-
-            digest = context.DigestStr;
-            break;
-        }
-        case hash_sha512:
-        {
-            sha2_512_context context;
-            // if(arguments.fileFlag)
-            // {
-            //     context = MD5HashFile(arguments.messagePtr);
-            // }
-            // else
-            {
-                context = SHA2_HashStringSHA512_512(arguments.messagePtr);
+                context = SHA2_HashStringSHA256(arguments.messagePtr);
             }
 
             digest = context.DigestStr;
@@ -340,7 +310,36 @@ int main(int argc, char const *argv[])
             digest = context.DigestStr;
             break;
         }
+        case hash_sha384:
+        {
+            sha2_512_context context;
+            // if(arguments.fileFlag)
+            // {
+            //     context = MD5HashFile(arguments.messagePtr);
+            // }
+            // else
+            {
+                context = SHA2_HashStringSHA384(arguments.messagePtr);
+            }
 
+            digest = context.DigestStr;
+            break;
+        }
+        case hash_sha512:
+        {
+            sha2_512_context context;
+            // if(arguments.fileFlag)
+            // {
+            //     context = MD5HashFile(arguments.messagePtr);
+            // }
+            // else
+            {
+                context = SHA2_HashStringSHA512(arguments.messagePtr);
+            }
+
+            digest = context.DigestStr;
+            break;
+        }
         default:
         {
             printf("Unsupported algorithm selected\n");
