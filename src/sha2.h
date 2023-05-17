@@ -65,15 +65,11 @@ typedef enum
 {
     SHA2_DIGEST_LENGTH_SHA224,
     SHA2_DIGEST_LENGTH_SHA256,
-} sha2_digest_length_256;
-
-typedef enum
-{
     SHA2_DIGEST_LENGTH_SHA512_224,
     SHA2_DIGEST_LENGTH_SHA512_256,
     SHA2_DIGEST_LENGTH_SHA384,
     SHA2_DIGEST_LENGTH_SHA512,
-} sha2_digest_length_512;
+} sha2_digest_length;
 
 typedef struct
 {
@@ -766,7 +762,7 @@ static void SHA2_ConstructDigestSHA512(sha2_512_context *context)
             context->H[7]);
 }
 
-sha2_256_context SHA2_HashStringSHA256_(char *messagePtr, sha2_digest_length_256 digestLength)
+sha2_256_context SHA2_HashStringSHA256_(char *messagePtr, sha2_digest_length digestLength)
 {
     sha2_256_context context;
     uint64_t messageBlockByteCount = 0;
@@ -779,10 +775,14 @@ sha2_256_context SHA2_HashStringSHA256_(char *messagePtr, sha2_digest_length_256
             break;
         }
         case SHA2_DIGEST_LENGTH_SHA256:
-        default:
         {
             SHA2_InitializeContextSHA256(&context);
             break;
+        }
+        default:
+        {
+            // Invalid digest length for SHA256
+            sha2_assert(false);
         }
     }
 
@@ -841,18 +841,24 @@ sha2_256_context SHA2_HashStringSHA256_(char *messagePtr, sha2_digest_length_256
         case SHA2_DIGEST_LENGTH_SHA224:
         {
             SHA2_ConstructDigestSHA224(&context);
-            return context;
+            break;
         }
         case SHA2_DIGEST_LENGTH_SHA256:
-        default:
         {
             SHA2_ConstructDigestSHA256(&context);
-            return context;
+            break;
+        }
+        default:
+        {
+            // Invalid digest length for SHA256
+            sha2_assert(false);
         }
     }
+
+    return context;
 }
 
-sha2_256_context SHA2_HashFileSHA256_(char *fileName, sha2_digest_length_256 digestLength)
+sha2_256_context SHA2_HashFileSHA256_(char *fileName, sha2_digest_length digestLength)
 {
     sha2_256_context context;
     switch (digestLength)
@@ -863,10 +869,14 @@ sha2_256_context SHA2_HashFileSHA256_(char *fileName, sha2_digest_length_256 dig
             break;
         }
         case SHA2_DIGEST_LENGTH_SHA256:
-        default:
         {
             SHA2_InitializeContextSHA256(&context);
             break;
+        }
+        default:
+        {
+            // Invalid digest length for SHA256
+            sha2_assert(false);
         }
     }
 
@@ -948,17 +958,21 @@ sha2_256_context SHA2_HashFileSHA256_(char *fileName, sha2_digest_length_256 dig
             break;
         }
         case SHA2_DIGEST_LENGTH_SHA256:
-        default:
         {
             SHA2_ConstructDigestSHA256(&context);
             break;
+        }
+        default:
+        {
+            // Invalid digest length for SHA256
+            sha2_assert(false);
         }
     }
 
     return context;
 }
 
-sha2_512_context SHA2_HashStringSHA512_(char *messagePtr, sha2_digest_length_512 digestLength)
+sha2_512_context SHA2_HashStringSHA512_(char *messagePtr, sha2_digest_length digestLength)
 {
     sha2_512_context context;
     size_t messageBlockByteCount = 0;
@@ -1056,17 +1070,21 @@ sha2_512_context SHA2_HashStringSHA512_(char *messagePtr, sha2_digest_length_512
             break;
         }
         case SHA2_DIGEST_LENGTH_SHA512:
-        default:
         {
             SHA2_ConstructDigestSHA512(&context);
             break;
+        }
+        default:
+        {
+            // Invalid digest length for SHA512
+            sha2_assert(false);
         }
     }
 
     return context;
 }
 
-sha2_512_context SHA2_HashFileSHA512_(char *fileName, sha2_digest_length_512 digestLength)
+sha2_512_context SHA2_HashFileSHA512_(char *fileName, sha2_digest_length digestLength)
 {
     sha2_512_context context;
     switch (digestLength)
@@ -1087,10 +1105,14 @@ sha2_512_context SHA2_HashFileSHA512_(char *fileName, sha2_digest_length_512 dig
             break;
         }
         case SHA2_DIGEST_LENGTH_SHA512:
-        default:
         {
             SHA2_InitializeContextSHA512(&context);
             break;
+        }
+        default:
+        {
+            // Invalid digest length for SHA256
+            sha2_assert(false);
         }
     }
 
@@ -1182,10 +1204,14 @@ sha2_512_context SHA2_HashFileSHA512_(char *fileName, sha2_digest_length_512 dig
             break;
         }
         case SHA2_DIGEST_LENGTH_SHA512:
-        default:
         {
             SHA2_ConstructDigestSHA512(&context);
             break;
+        }
+        default:
+        {
+            // Invalid digest length for SHA512
+            sha2_assert(false);
         }
     }
 
