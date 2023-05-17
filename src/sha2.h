@@ -48,26 +48,26 @@ typedef struct uint128_t
 }uint128_t;
 
 // Number of bytes in each message block
-typedef enum sha2_message_block_size_bytes
+typedef enum
 {
     SHA2_MESSAGE_BLOCK_SIZE_SHA256 = 64,             // 512 bits
     SHA2_MESSAGE_BLOCK_SIZE_SHA512 = 128,            // 1024 bits
 } sha2_message_block_size_bytes;
 
 // Number of bytes allocated for storing the length of the message
-typedef enum sha2_message_length_block_size_bytes
+typedef enum
 {
     SHA2_MESSAGE_LENGTH_BLOCK_SHA256 = 8,       // 64 bits
     SHA2_MESSAGE_LENGTH_BLOCK_SHA512 = 16,      // 128 bits
 } sha2_message_length_block_size_bytes;
 
-typedef enum sha2_digest_length_256
+typedef enum
 {
     SHA2_DIGEST_LENGTH_SHA224,
     SHA2_DIGEST_LENGTH_SHA256,
 } sha2_digest_length_256;
 
-typedef enum sha2_digest_length_512
+typedef enum
 {
     SHA2_DIGEST_LENGTH_SHA512_224,
     SHA2_DIGEST_LENGTH_SHA512_256,
@@ -75,7 +75,7 @@ typedef enum sha2_digest_length_512
     SHA2_DIGEST_LENGTH_SHA512,
 } sha2_digest_length_512;
 
-typedef struct sha2_message_padding_info
+typedef struct
 {
     uint8_t *BufferPtr;
     size_t BufferSizeBytes;
@@ -89,7 +89,7 @@ typedef struct sha2_message_padding_info
     uint64_t MessageLengthBitsLow;
 }sha2_message_padding_info;
 
-typedef struct sha2_256_context
+typedef struct
 {
     uint64_t MessageLengthBits;
     union
@@ -110,7 +110,7 @@ typedef struct sha2_256_context
     char DigestStr[65];
 } sha2_256_context;
 
-typedef struct sha2_512_context
+typedef struct
 {
     uint128_t MessageLengthBits;
     union
