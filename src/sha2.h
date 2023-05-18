@@ -814,10 +814,21 @@ sha2_256_context SHA2_HashStringSHA256_(char *messagePtr, sha2_digest_length dig
     while (*messagePtr != 0x00)
     {
         sha2_assert(messageBlockByteCount < SHA2_MESSAGE_BLOCK_SIZE_SHA256);
+        uint64_t oldMessageLengthBits = context.MessageLengthBits;
 
         messagePtr++;
         messageBlockByteCount++;
         context.MessageLengthBits += 8;
+
+        if (context.MessageLengthBits < oldMessageLengthBits)
+        {
+            sha2_assert(false);
+
+            context.Error = true;
+            sprintf(context.ErrorStr, "Invalid message length: larger than 2^64 bits");
+            sprintf(context.DigestStr, "");
+            return context;
+        }
 
         // Process the message in blocks of 512 bits (64 bytes or sixteen 32-bit words)
         if (messageBlockByteCount == SHA2_MESSAGE_BLOCK_SIZE_SHA256)
@@ -944,8 +955,19 @@ sha2_256_context SHA2_HashFileSHA256_(char *fileName, sha2_digest_length digestL
     while(blockBytesRead)
     {
         sha2_assert(blockBytesRead <= SHA2_MESSAGE_BLOCK_SIZE_SHA256);
+        uint64_t oldMessageLengthBits = context.MessageLengthBits;
 
         context.MessageLengthBits += (blockBytesRead * 8);
+        if (context.MessageLengthBits < oldMessageLengthBits)
+        {
+            sha2_assert(false);
+
+            context.Error = true;
+            sprintf(context.ErrorStr, "Invalid file size: larger than 2^64 bits");
+            sprintf(context.DigestStr, "");
+            return context;
+        }
+
         if(blockBytesRead == SHA2_MESSAGE_BLOCK_SIZE_SHA256)
         {
             SHA2_UpdateHashSHA256(&context, bufferPtr, blockBytesRead);
