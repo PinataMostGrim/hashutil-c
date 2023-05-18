@@ -42,7 +42,7 @@ static uint64_t const K_SHA512[] =
     0x4cc5d4becb3e42b6, 0x597f299cfc657e2a, 0x5fcb6fab3ad6faec, 0x6c44198c4a475817,
 };
 
-typedef struct uint128_t
+typedef struct
 {
     uint64_t High;
     uint64_t Low;
@@ -381,6 +381,21 @@ void IncrementUINT128(uint128_t *value, int64_t increment)
     {
         value->High--;
     }
+}
+
+bool UINT128GreaterThan(uint128_t lhv, uint128_t rhv)
+{
+    if (lhv.High > rhv.High)
+    {
+        return true;
+    }
+
+    if (lhv.High < rhv.High)
+    {
+        return false;
+    }
+
+    return lhv.Low > rhv.Low;
 }
 
 uint32_t CH_SHA256(uint32_t x, uint32_t y, uint32_t z)
@@ -1082,10 +1097,24 @@ sha2_512_context SHA2_HashStringSHA512_(char *messagePtr, sha2_digest_length dig
     while (*messagePtr != 0x00)
     {
         sha2_assert(messageBlockByteCount < SHA2_MESSAGE_BLOCK_SIZE_SHA512);
+        uint128_t oldMessageLengthBits =
+        {
+            oldMessageLengthBits.High = context.MessageLengthBits.High,
+            oldMessageLengthBits.Low = context.MessageLengthBits.Low,
+        };
 
         messagePtr++;
         messageBlockByteCount++;
         IncrementUINT128(&context.MessageLengthBits, 8);
+        if (UINT128GreaterThan(oldMessageLengthBits, context.MessageLengthBits))
+        {
+            sha2_assert(false);
+
+            context.Error = true;
+            sprintf(context.ErrorStr, "Invalid message length: larger than 2^128 bits");
+            sprintf(context.DigestStr, "");
+            return context;
+        }
 
         // Process the message in blocks of 1024 bits (128 bytes or sixteen 64-bit words)
         if (messageBlockByteCount == SHA2_MESSAGE_BLOCK_SIZE_SHA512)
@@ -1234,8 +1263,23 @@ sha2_512_context SHA2_HashFileSHA512_(char *fileName, sha2_digest_length digestL
     while(blockBytesRead)
     {
         sha2_assert(blockBytesRead <= SHA2_MESSAGE_BLOCK_SIZE_SHA512);
+        uint128_t oldMessageLengthBits =
+        {
+            oldMessageLengthBits.High = context.MessageLengthBits.High,
+            oldMessageLengthBits.Low = context.MessageLengthBits.Low,
+        };
 
         IncrementUINT128(&context.MessageLengthBits, (blockBytesRead * 8));
+        if (UINT128GreaterThan(oldMessageLengthBits, context.MessageLengthBits))
+        {
+            sha2_assert(false);
+
+            context.Error = true;
+            sprintf(context.ErrorStr, "Invalid message length: larger than 2^128 bits");
+            sprintf(context.DigestStr, "");
+            return context;
+        }
+
         if(blockBytesRead == SHA2_MESSAGE_BLOCK_SIZE_SHA512)
         {
             SHA2_UpdateHashSHA512(&context, bufferPtr, blockBytesRead);
