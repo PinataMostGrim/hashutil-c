@@ -1,3 +1,17 @@
+/* TODO (Aaron):
+    - Add readme / documentation to header
+    - Add license and revision information to footer
+    - Eliminate stdint.h?
+    - Add platform layer for working with files
+*/
+
+/*  hashutil_sha2 - Implements the SHA2 family of hashing algorithms.
+
+    Do this:
+      #define HASHUTIL_SHA2_IMPLEMENTATION
+   before you include this file in *one* C or C++ file to create the implementation.
+*/
+
 #ifndef HASHUTIL_SHA2_H
 #define HASHUTIL_SHA2_H
 
@@ -217,6 +231,7 @@ static uint64_t SHA2_ROTR64(uint64_t value, uint8_t count)
     return (value >> count) | (value << (64 - count));
 }
 
+// TODO (Aaron): Change this to the form that filling W[] uses?
 // Swap endianness of 64 bit value
 static void SHA2_MirrorBits64(uint64_t *bits)
 {
@@ -605,6 +620,8 @@ static void SHA2_UpdateHashSHA256(sha2_256_context *context, uint8_t *messagePtr
         context->H6 += G;
         context->H7 += H;
     }
+
+    // TODO (Aaron): Any clean-up here? Zero-out W, A-H, and t1/t2?
 }
 
 static void SHA2_UpdateHashSHA512(sha2_512_context *context, uint8_t *messagePtr, uint64_t byteCount)
@@ -693,6 +710,8 @@ static void SHA2_UpdateHashSHA512(sha2_512_context *context, uint8_t *messagePtr
         context->H6 += G;
         context->H7 += H;
     }
+
+    // TODO (Aaron): Any clean-up here? Zero-out W, A-H, and t1/t2?
 }
 
 static void SHA2_ConstructDigestSHA224(sha2_256_context *context)

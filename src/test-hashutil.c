@@ -1,3 +1,7 @@
+/* TODO (Aaron):
+    - Add readme / documentation to file
+*/
+
 #include <stdint.h>
 #include <stdio.h>
 #include <assert.h>
