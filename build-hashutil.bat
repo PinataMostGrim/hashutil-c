@@ -5,10 +5,10 @@
 :: NOTE: Set %DEBUG% to 1 for debug build
 IF [%DEBUG%] == [1] (
     :: Making debug build
-    set CompilerFlags=-nologo -Od -Gm- -MT -GR- -EHa- -Oi -W4 -FC -wd4996 -wd4201 -DHASHUTIL_SLOW=1 -Zi -DEBUG:FULL
+    set CompilerFlags=-nologo -Od -Gm- -MT -GR- -EHa- -Oi -W4 -FC -wd4996 -wd4201 -DHASHUTIL_SLOW=1 -Zi -DEBUG:FULL -analyze
 ) ELSE (
     :: Making release build
-    set CompilerFlags=-nologo -Od -Gm- -MT -GR- -EHa- -Oi -W4 -FC -wd4996 -wd4201 -DHASHUTIL_SLOW=0
+    set CompilerFlags=-nologo -Od -Gm- -MT -GR- -EHa- -Oi -W4 -FC -wd4996 -wd4201 -DHASHUTIL_SLOW=0 -analyze
 )
 
 set BuildFolder=bin
@@ -22,5 +22,6 @@ pushd %BuildFolder%
 del *.pdb > NUL 2> NUL
 cl %CompilerFlags% -Tc "..\src\md5.h" -DHASHUTIL_MD5_IMPLEMENTATION -Femd5.dll /link -DLL %LinkerFlags% -EXPORT:MD5GetVersion -EXPORT:MD5HashString -EXPORT:MD5HashFile
 cl %CompilerFlags% -Tc "..\src\sha1.h" -DHASHUTIL_SHA1_IMPLEMENTATION -Fesha1.dll /link -DLL %LinkerFlags% -EXPORT:SHA1GetVersion -EXPORT:SHA1HashString -EXPORT:SHA1HashFile
+cl %CompilerFlags% -Tc "..\src\sha2.h" -DHASHUTIL_SHA2_IMPLEMENTATION -Fesha2.dll /link -DLL %LinkerFlags% -EXPORT:SHA2_GetVersion -EXPORT:SHA2_HashStringSHA256
 cl %CompilerFlags% "..\src\hashutil.c" /link %LinkerFlags%
 popd

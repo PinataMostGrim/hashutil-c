@@ -2,13 +2,16 @@
 
 @echo off
 
+:: Set a variable for tracking build failure
+set "BUILD_FAILED="
+
 :: NOTE: Set %DEBUG% to 1 for debug build
 IF [%DEBUG%] == [1] (
     :: Making debug build
-    set CompilerFlags=-nologo -Od -Gm- -MT -GR- -EHa- -Oi -W4 -FC -wd4505 -wd4068 -wd4996 -wd4201 -DHASHUTIL_SLOW=1 -Zi -DEBUG:FULL
+    set CompilerFlags=-nologo -Od -Gm- -MT -GR- -EHa- -Oi -W4 -FC -wd4505 -wd4068 -wd4996 -wd4201 -DHASHUTIL_SLOW=1 -Zi -DEBUG:FULL -analyze
 ) ELSE (
     :: Making release build
-    set CompilerFlags=-nologo -Od -Gm- -MT -GR- -EHa- -Oi -W4 -FC -wd4505 -wd4068 -wd4996 -wd4201
+    set CompilerFlags=-nologo -Od -Gm- -MT -GR- -EHa- -Oi -W4 -FC -wd4505 -wd4068 -wd4996 -wd4201 -analyze
 )
 
 set BuildFolder=bin
@@ -21,4 +24,8 @@ pushd %BuildFolder%
 :: Compile test runner
 del *.pdb > NUL 2> NUL
 cl %CompilerFlags% "..\src\test-hashutil.c" /link %LinkerFlags%
+if %ERRORLEVEL% neq 0 (set "BUILD_FAILED=false")
 popd
+
+:: Exit with error if compiling fails
+if defined BUILD_FAILED (exit /b 1 )
