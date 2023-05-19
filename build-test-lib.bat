@@ -1,4 +1,10 @@
-:: IMPORTANT: "vcvarsall.bat x64" must be executed in the shell first. Must be run from project root folder.
+:: Build script for 'test-shared-library'
+
+:: Requirements:
+::  - MSVC accessible via PATH
+::  - "vcvarsall.bat x64" must be executed in the shell before this script is run
+::  - This script must be run from project root folder
+
 
 @echo off
 

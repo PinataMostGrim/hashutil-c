@@ -1,4 +1,8 @@
-# Build script for hashutil-c.
+# Build script for hashutil.
+
+# Requirements:
+#   - clang accessible via PATH
+#   - Script executed from the project root
 
 # Save the script's folder
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
