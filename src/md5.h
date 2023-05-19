@@ -1,7 +1,5 @@
 /* TODO (Aaron):
-    - Add error handling to context so that we don't have to exit() on failure and can eliminate stdlib
     - Update file to conform more with sha2.h
-        - Update MemoryCopy()
     - Profile the time taken hashing a large file using methods vs defines
     - Add platform layer for working with files
 */
@@ -17,6 +15,7 @@
 #define HASHUTIL_MD5_H
 
 #include <stdint.h>
+#include <stdbool.h>
 
 static uint32_t const HASHUTIL_MD5_VERSION = 1;
 
@@ -26,6 +25,8 @@ typedef struct md5_context
     uint32_t State[4];
     uint8_t Digest[16];
     char DigestStr[33];
+    bool Error;
+    char ErrorStr[64];
 } md5_context;
 
 
@@ -48,7 +49,6 @@ md5_context MD5_HashFile(const char *fileName);
 #ifdef HASHUTIL_MD5_IMPLEMENTATION
 
 #include <stdio.h>
-#include <stdlib.h>
 #include <stdbool.h>
 
 #if HASHUTIL_SLOW
@@ -100,15 +100,18 @@ uint32_t MD5_GetVersion()
 static void MD5_InitializeContext(md5_context *context)
 {
     context->MessageLengthBits = 0;
+
     context->State[0] = 0x67452301;
     context->State[1] = 0xefcdab89;
     context->State[2] = 0x98badcfe;
     context->State[3] = 0x10325476;
 
+    context->Error = false;
 
 #if HASHUTIL_SLOW
     MD5_MemorySet(context->Digest, 0, sizeof(context->Digest));
     MD5_MemorySet((uint8_t *)context->DigestStr, 0, sizeof(context->DigestStr));
+    MD5_MemorySet((uint8_t *)context->ErrorStr, 0, sizeof(context->ErrorStr));
 #endif
 }
 
@@ -348,6 +351,7 @@ md5_context MD5_HashString(char *messagePtr)
     md5_context result;
     MD5_InitializeContext(&result);
 
+    // TODO (Aaron): Change this to uint8_t and add asserts like we have in sha2.h
     uint32_t byteCount = 0;
 
     while (*messagePtr != 0x00)
@@ -417,8 +421,22 @@ md5_context MD5_HashString(char *messagePtr)
 
 md5_context MD5_HashFile(const char *fileName)
 {
+    md5_context result;
+    MD5_InitializeContext(&result);
+
+    FILE *file = fopen(fileName, "rb");
+    if(!file)
+    {
+        md5_assert(false);
+
+        result.Error = true;
+        sprintf(result.ErrorStr, "Unable to open file");
+        sprintf(result.DigestStr, "");
+        return result;
+    }
+
     // Note (Aaron): Read the file in 64 byte chunks but allocate 128 bytes in case
-    // we need an extended margine when padding the end of the file. 64 byte chunks are
+    // we need an extended margin when padding the end of the file. 64 byte chunks are
     // used as this is the size of blocks MD5 processes at one time.
     uint8_t buffer[MD5_BUFFER_BYTE_SIZE];
 #if HASHUTIL_SLOW
@@ -427,15 +445,6 @@ md5_context MD5_HashFile(const char *fileName)
     size_t bytesRead;
     uint32_t byteCount = 0;
 
-    FILE *file = fopen(fileName, "rb");
-    if(!file)
-    {
-        printf("Unable to open file '%s'", fileName);
-        exit(1);
-    }
-
-    md5_context result;
-    MD5_InitializeContext(&result);
     uint8_t *bufferPtr = buffer;
     size_t readElementSize = 1;
     size_t readBlockSize = sizeof(uint8_t) * MD5_CHUNK_BYTE_COUNT;
@@ -464,9 +473,13 @@ md5_context MD5_HashFile(const char *fileName)
 
     if(ferror(file))
     {
-        printf("Error reading file '%s'", fileName);
         fclose(file);
-        exit(1);
+        md5_assert(false);
+
+        result.Error = true;
+        sprintf(result.ErrorStr, "Error reading file");
+        sprintf(result.DigestStr, "");
+        return result;
     }
 
     fclose(file);

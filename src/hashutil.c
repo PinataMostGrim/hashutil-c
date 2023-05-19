@@ -249,6 +249,11 @@ int main(int argc, char const *argv[])
                 context = MD5_HashString(arguments.messagePtr);
             }
 
+            if (context.Error)
+            {
+                PrintErrorAndExit(context.ErrorStr);
+            }
+
             digest = context.DigestStr;
             break;
         }
