@@ -100,7 +100,7 @@ char *GetHashMenemonic(hash_algorithm algorithm)
 
 static void PrintUsage()
 {
-    printf("usage: hashutil [-l -f] algorithm message\n\n");
+    printf("usage: hashutil [-l -f -h] algorithm message\n\n");
     printf("Produces a message or file digest using various hashing algorithms.\n\n");
 
     printf("positional arguments:\n");
@@ -109,8 +109,9 @@ static void PrintUsage()
     printf("\n");
 
     printf("options:\n");
-    printf("-l, --list\t\tList all supported hashing algorithms.");
-    printf("-f, --file\t\tHashes a file. Message is treated as a path.\n");
+    printf("-l, --list\t\tList all supported hashing algorithms\n");
+    printf("-f, --file\t\tHashes a file. Message is treated as a path\n");
+    printf("-h, --help\t\tPrints these usage instructions\n");
     printf("\n");
 }
 
