@@ -5,7 +5,7 @@
     - Add platform layer for working with files
 */
 
-/*  hashutil_sha2 - Implements the SHA2 family of hashing algorithms.
+/*  sha2.h - Implements the SHA2 family of hashing algorithms.
 
     Do this:
       #define HASHUTIL_SHA2_IMPLEMENTATION

@@ -1,3 +1,17 @@
+/* TODO (Aaron):
+    - Add readme / documentation to header
+    - Update file to conform more with sha2.h
+        - Guard against messages over 2^64-1 bits in length
+        - Add error handling to context so that we don't have to exit() on failure and can eliminate stdlib
+*/
+
+/*  sha1.h - Implements the SHA1 hashing algorithms.
+
+    Do this:
+      #define HASHUTIL_SHA1_IMPLEMENTATION
+   before you include this file in *one* C or C++ file to create the implementation.
+*/
+
 #ifndef HASHUTIL_SHA1_H
 #define HASHUTIL_SHA1_H
 

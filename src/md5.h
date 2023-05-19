@@ -1,3 +1,18 @@
+/* TODO (Aaron):
+    - Add error handling to context so that we don't have to exit() on failure and can eliminate stdlib
+    - Update file to conform more with sha2.h
+        - Update MemoryCopy()
+    - Profile the time taken hashing a large file using methods vs defines
+    - Add platform layer for working with files
+*/
+
+/*  md5.h - Implements the MD5 hashing algorithm.
+
+    Do this:
+      #define HASHUTIL_MD5_IMPLEMENTATION
+   before you include this file in *one* C or C++ file to create the implementation.
+*/
+
 #ifndef HASHUTIL_MD5_H
 #define HASHUTIL_MD5_H
 

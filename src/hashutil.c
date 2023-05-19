@@ -9,6 +9,12 @@
     - Enforce C99 in build batch files
 */
 
+/*  hashutil.c
+
+    Command line application that hashes files and strings using the MD5 and SHA1-SHA2
+    family of algorithms. Run 'hashutil --help' for usage instructions.
+*/
+
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
