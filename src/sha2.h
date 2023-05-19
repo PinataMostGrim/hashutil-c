@@ -861,7 +861,7 @@ sha2_256_context SHA2_HashStringSHA256_(char *messagePtr, sha2_digest_length dig
             sha2_assert(false);
 
             context.Error = true;
-            sprintf(context.ErrorStr, "Invalid message length: larger than 2^64 bits");
+            sprintf(context.ErrorStr, "Invalid message length: larger than 2^64-1 bits");
             sprintf(context.DigestStr, "");
             return context;
         }
@@ -1001,7 +1001,7 @@ sha2_256_context SHA2_HashFileSHA256_(char *fileName, sha2_digest_length digestL
             sha2_assert(false);
 
             context.Error = true;
-            sprintf(context.ErrorStr, "Invalid file size: larger than 2^64 bits");
+            sprintf(context.ErrorStr, "Invalid file size: larger than 2^64-1 bits");
             sprintf(context.DigestStr, "");
             return context;
         }
@@ -1129,7 +1129,7 @@ sha2_512_context SHA2_HashStringSHA512_(char *messagePtr, sha2_digest_length dig
             sha2_assert(false);
 
             context.Error = true;
-            sprintf(context.ErrorStr, "Invalid message length: larger than 2^128 bits");
+            sprintf(context.ErrorStr, "Invalid message length: larger than 2^128-1 bits");
             sprintf(context.DigestStr, "");
             return context;
         }
@@ -1293,7 +1293,7 @@ sha2_512_context SHA2_HashFileSHA512_(char *fileName, sha2_digest_length digestL
             sha2_assert(false);
 
             context.Error = true;
-            sprintf(context.ErrorStr, "Invalid message length: larger than 2^128 bits");
+            sprintf(context.ErrorStr, "Invalid message length: larger than 2^128-1 bits");
             sprintf(context.DigestStr, "");
             return context;
         }
