@@ -32,5 +32,5 @@ mkdir -p "$SCRIPT_DIR/$BuildFolder"
 pushd $BuildFolder > /dev/null 2>&1
 
 # Compile hashutil
-clang $CompilerFlags "$SCRIPT_DIR/src/hashutil.cpp" -o "hashutil"
+clang $CompilerFlags "$SCRIPT_DIR/src/hashutil.c" -o "hashutil"
 popd > /dev/null 2>&1
