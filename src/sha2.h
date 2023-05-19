@@ -65,8 +65,8 @@ typedef struct
 // Number of bytes in each message block
 typedef enum
 {
-    SHA2_MESSAGE_BLOCK_SIZE_SHA256 = 64,             // 512 bits
-    SHA2_MESSAGE_BLOCK_SIZE_SHA512 = 128,            // 1024 bits
+    SHA2_MESSAGE_BLOCK_SIZE_SHA256 = 64,        // 512 bits
+    SHA2_MESSAGE_BLOCK_SIZE_SHA512 = 128,       // 1024 bits
 } sha2_message_block_size_bytes;
 
 // Number of bytes allocated for storing the length of the message
@@ -143,7 +143,6 @@ typedef struct
     bool Error;
     char ErrorStr[64];
 } sha2_512_context;
-
 
 #ifdef __cplusplus
 extern "C" {
@@ -383,7 +382,7 @@ static void SHA2_InitializeContextSHA512(sha2_512_context *context)
 #endif
 }
 
-void IncrementUINT128(uint128_t *value, int64_t increment)
+void SHA2_IncrementUINT128(uint128_t *value, int64_t increment)
 {
     uint64_t low = value->Low;
     value->Low += increment;
@@ -398,7 +397,7 @@ void IncrementUINT128(uint128_t *value, int64_t increment)
     }
 }
 
-bool UINT128GreaterThan(uint128_t lhv, uint128_t rhv)
+bool SHA2_UINT128GreaterThan(uint128_t lhv, uint128_t rhv)
 {
     if (lhv.High > rhv.High)
     {
@@ -413,73 +412,73 @@ bool UINT128GreaterThan(uint128_t lhv, uint128_t rhv)
     return lhv.Low > rhv.Low;
 }
 
-uint32_t CH_SHA256(uint32_t x, uint32_t y, uint32_t z)
+uint32_t SHA2_CH_SHA256(uint32_t x, uint32_t y, uint32_t z)
 {
     // CH( x, y, z) = (x AND y) XOR ( (NOT x) AND z)
     return (x & y) ^ (~x & z);
 }
 
-uint32_t MAJ_SHA256(uint32_t x, uint32_t y, uint32_t z)
+uint32_t SHA2_MAJ_SHA256(uint32_t x, uint32_t y, uint32_t z)
 {
     // MAJ( x, y, z) = (x AND y) XOR (x AND z) XOR (y AND z)
     return (x & y) ^ (x & z) ^ (y & z);
 }
 
-uint32_t BSIG0_SHA256(uint32_t x)
+uint32_t SHA2_BSIG0_SHA256(uint32_t x)
 {
     // BSIG0(x) = ROTR^2(x) XOR ROTR^13(x) XOR ROTR^22(x)
     return SHA2_ROTR32(x, 2) ^ SHA2_ROTR32(x, 13) ^ SHA2_ROTR32(x, 22);
 }
 
-uint32_t BSIG1_SHA256(uint32_t x)
+uint32_t SHA2_BSIG1_SHA256(uint32_t x)
 {
     // BSIG1(x) = ROTR^6(x) XOR ROTR^11(x) XOR ROTR^25(x)
     return SHA2_ROTR32(x, 6) ^ SHA2_ROTR32(x, 11) ^ SHA2_ROTR32(x, 25);
 }
 
-uint32_t SSIG0_SHA256(uint32_t x)
+uint32_t SHA2_SSIG0_SHA256(uint32_t x)
 {
     // SSIG0(x) = ROTR^7(x) XOR ROTR^18(x) XOR SHR^3(x)
     return SHA2_ROTR32(x, 7) ^ SHA2_ROTR32(x, 18) ^ (x >> 3);
 }
 
-uint32_t SSIG1_SHA256(uint32_t x)
+uint32_t SHA2_SSIG1_SHA256(uint32_t x)
 {
     // SSIG1(x) = ROTR^17(x) XOR ROTR^19(x) XOR SHR^10(x)
     return SHA2_ROTR32(x, 17) ^ SHA2_ROTR32(x, 19) ^ (x >> 10);
 }
 
-uint64_t CH_SHA512(uint64_t x, uint64_t y, uint64_t z)
+uint64_t SHA2_CH_SHA512(uint64_t x, uint64_t y, uint64_t z)
 {
     // CH( x, y, z) = (x AND y) XOR ( (NOT x) AND z)
     return (x & y) ^ (~x & z);
 }
 
-uint64_t MAJ_SHA512(uint64_t x, uint64_t y, uint64_t z)
+uint64_t SHA2_MAJ_SHA512(uint64_t x, uint64_t y, uint64_t z)
 {
     // MAJ( x, y, z) = (x AND y) XOR (x AND z) XOR (y AND z)
     return (x & y) ^ (x & z) ^ (y & z);
 }
 
-uint64_t BSIG0_SHA512(uint64_t x)
+uint64_t SHA2_BSIG0_SHA512(uint64_t x)
 {
     // BSIG0(x) = ROTR^28(x) XOR ROTR^34(x) XOR ROTR^39(x)
     return SHA2_ROTR64(x, 28) ^ SHA2_ROTR64(x, 34) ^ SHA2_ROTR64(x, 39);
 }
 
-uint64_t BSIG1_SHA512(uint64_t x)
+uint64_t SHA2_BSIG1_SHA512(uint64_t x)
 {
     // BSIG1(x) = ROTR^14(x) XOR ROTR^18(x) XOR ROTR^41(x)
     return SHA2_ROTR64(x, 14) ^ SHA2_ROTR64(x, 18) ^ SHA2_ROTR64(x, 41);
 }
 
-uint64_t SSIG0_SHA512(uint64_t x)
+uint64_t SHA2_SSIG0_SHA512(uint64_t x)
 {
     // SSIG0(x) = ROTR^1(x) XOR ROTR^8(x) XOR SHR^7(x)
     return SHA2_ROTR64(x, 1) ^ SHA2_ROTR64(x, 8) ^ (x >> 7);
 }
 
-uint64_t SSIG1_SHA512(uint64_t x)
+uint64_t SHA2_SSIG1_SHA512(uint64_t x)
 {
     // SSIG1(x) = ROTR^19(x) XOR ROTR^61(x) XOR SHR^6(x)
     return SHA2_ROTR64(x, 19) ^ SHA2_ROTR64(x, 61) ^ (x >> 6);
@@ -581,7 +580,7 @@ static void SHA2_UpdateHashSHA256(sha2_256_context *context, uint8_t *messagePtr
         for (int t = 16; t < SHA2_ArrayCount(W); ++t)
         {
             // Wt = SSIG1(W(t-2)) + W(t-7) + SSIG0(w(t-15)) + W(t-16)
-            W[t] = SSIG1_SHA256(W[t-2]) + W[t-7] + SSIG0_SHA256(W[t-15]) + W[t-16];
+            W[t] = SHA2_SSIG1_SHA256(W[t-2]) + W[t-7] + SHA2_SSIG0_SHA256(W[t-15]) + W[t-16];
         }
 
         A = context->H0;
@@ -596,10 +595,10 @@ static void SHA2_UpdateHashSHA256(sha2_256_context *context, uint8_t *messagePtr
         for (int t = 0; t < 64; ++t)
         {
             // T1 = h + BSIG1(e) + CH(e,f,g) + Kt + Wt
-            t1 = H + BSIG1_SHA256(E) + CH_SHA256(E, F, G) + K_SHA256[t] + W[t];
+            t1 = H + SHA2_BSIG1_SHA256(E) + SHA2_CH_SHA256(E, F, G) + K_SHA256[t] + W[t];
 
             // T2 = BSIG0_SHA256(a) + MAJ_SHA256(a,b,c)
-            t2 = BSIG0_SHA256(A) + MAJ_SHA256(A, B, C);
+            t2 = SHA2_BSIG0_SHA256(A) + SHA2_MAJ_SHA256(A, B, C);
 
             H = G;
             G = F;
@@ -671,7 +670,7 @@ static void SHA2_UpdateHashSHA512(sha2_512_context *context, uint8_t *messagePtr
         for (int t = 16; t < SHA2_ArrayCount(W); ++t)
         {
             // Wt = SSIG1(W(t-2)) + W(t-7) + SSIG0(W(t-15)) + W(t-16)
-            W[t] = SSIG1_SHA512(W[t-2]) + W[t-7] + SSIG0_SHA512(W[t-15]) + W[t-16];
+            W[t] = SHA2_SSIG1_SHA512(W[t-2]) + W[t-7] + SHA2_SSIG0_SHA512(W[t-15]) + W[t-16];
         }
 
         A = context->H0;
@@ -686,10 +685,10 @@ static void SHA2_UpdateHashSHA512(sha2_512_context *context, uint8_t *messagePtr
         for (int t = 0; t < SHA2_ArrayCount(W); ++t)
         {
             // T1 = h + BSIG1(e) + CH(e,f,g) + Kt + Wt
-            t1 = H + BSIG1_SHA512(E) + CH_SHA512(E, F, G) + K_SHA512[t] + W[t];
+            t1 = H + SHA2_BSIG1_SHA512(E) + SHA2_CH_SHA512(E, F, G) + K_SHA512[t] + W[t];
 
             // T2 = BSIG0(a) + MAJ(a,b,c)
-            t2 = BSIG0_SHA512(A) + MAJ_SHA512(A, B, C);
+            t2 = SHA2_BSIG0_SHA512(A) + SHA2_MAJ_SHA512(A, B, C);
 
             H = G;
             G = F;
@@ -823,7 +822,7 @@ sha2_256_context SHA2_HashStringSHA256_(char *messagePtr, sha2_digest_length dig
     sha2_256_context context;
     uint8_t messageBlockByteCount = 0;
     sha2_static_assert(UINT8_MAX > (SHA2_MESSAGE_BLOCK_SIZE_SHA256 * 2),
-                       "messageBlockByteCount cannot fit within a uint8_t\n");
+                       "messageBlockByteCount cannot fit within a uint8_t");
 
     switch (digestLength)
     {
@@ -879,7 +878,7 @@ sha2_256_context SHA2_HashStringSHA256_(char *messagePtr, sha2_digest_length dig
     uint8_t buffer[SHA2_MESSAGE_BLOCK_SIZE_SHA256 * 2];
     uint8_t bufferSizeBytes = SHA2_MESSAGE_BLOCK_SIZE_SHA256 * 2;
     sha2_static_assert(UINT8_MAX > (SHA2_MESSAGE_BLOCK_SIZE_SHA256 * 2),
-                       "bufferSizeBytes cannot fit within a uint8_t\n");
+                       "bufferSizeBytes cannot fit within a uint8_t");
 
 #if HASHUTIL_SLOW
     // Note (Aaron): Useful for debug purposes to pack the buffer's bits with 1s
@@ -976,7 +975,7 @@ sha2_256_context SHA2_HashFileSHA256_(char *fileName, sha2_digest_length digestL
     uint8_t *bufferPtr = buffer;
     uint8_t bufferSizeBytes = SHA2_MESSAGE_BLOCK_SIZE_SHA256 * 2;
     sha2_static_assert(UINT8_MAX > (SHA2_MESSAGE_BLOCK_SIZE_SHA256 * 2),
-                       "bufferSizeBytes cannot fit within a uint8_t\n");
+                       "bufferSizeBytes cannot fit within a uint8_t");
 
 #if HASHUTIL_SLOW
     SHA2_MemorySet(bufferPtr, 0xff, bufferSizeBytes);
@@ -1077,7 +1076,7 @@ sha2_512_context SHA2_HashStringSHA512_(char *messagePtr, sha2_digest_length dig
     sha2_512_context context;
     uint16_t messageBlockByteCount = 0;
     sha2_static_assert(UINT16_MAX > (SHA2_MESSAGE_BLOCK_SIZE_SHA512 * 2),
-                       "messageBlockByteCount cannot fit within a uint16_t\n");
+                       "messageBlockByteCount cannot fit within a uint16_t");
 
     switch (digestLength)
     {
@@ -1124,8 +1123,8 @@ sha2_512_context SHA2_HashStringSHA512_(char *messagePtr, sha2_digest_length dig
 
         messagePtr++;
         messageBlockByteCount++;
-        IncrementUINT128(&context.MessageLengthBits, 8);
-        if (UINT128GreaterThan(oldMessageLengthBits, context.MessageLengthBits))
+        SHA2_IncrementUINT128(&context.MessageLengthBits, 8);
+        if (SHA2_UINT128GreaterThan(oldMessageLengthBits, context.MessageLengthBits))
         {
             sha2_assert(false);
 
@@ -1147,7 +1146,7 @@ sha2_512_context SHA2_HashStringSHA512_(char *messagePtr, sha2_digest_length dig
     uint8_t buffer[SHA2_MESSAGE_BLOCK_SIZE_SHA512 * 2];
     uint16_t bufferSizeBytes = SHA2_MESSAGE_BLOCK_SIZE_SHA512 * 2;
     sha2_static_assert(UINT16_MAX > (SHA2_MESSAGE_BLOCK_SIZE_SHA512 * 2),
-                       "bufferSizeBytes cannot fit within a uint16_t\n");
+                       "bufferSizeBytes cannot fit within a uint16_t");
 
 #if HASHUTIL_SLOW
     // Note (Aaron): Useful for debug purposes to pack the buffer's bits with 1s
@@ -1264,7 +1263,7 @@ sha2_512_context SHA2_HashFileSHA512_(char *fileName, sha2_digest_length digestL
     uint8_t *bufferPtr = buffer;
     uint16_t bufferSizeBytes = SHA2_MESSAGE_BLOCK_SIZE_SHA512 * 2;
     sha2_static_assert(UINT16_MAX > (SHA2_MESSAGE_BLOCK_SIZE_SHA512 * 2),
-                       "bufferSizeBytes cannot fit within a uint16_t\n");
+                       "bufferSizeBytes cannot fit within a uint16_t");
 
 #if HASHUTIL_SLOW
     SHA2_MemorySet(bufferPtr, 0xff, bufferSizeBytes);
@@ -1288,8 +1287,8 @@ sha2_512_context SHA2_HashFileSHA512_(char *fileName, sha2_digest_length digestL
             oldMessageLengthBits.Low = context.MessageLengthBits.Low,
         };
 
-        IncrementUINT128(&context.MessageLengthBits, (blockBytesRead * 8));
-        if (UINT128GreaterThan(oldMessageLengthBits, context.MessageLengthBits))
+        SHA2_IncrementUINT128(&context.MessageLengthBits, (blockBytesRead * 8));
+        if (SHA2_UINT128GreaterThan(oldMessageLengthBits, context.MessageLengthBits))
         {
             sha2_assert(false);
 
