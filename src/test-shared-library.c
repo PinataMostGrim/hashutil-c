@@ -1,3 +1,8 @@
+/*  test-shared-library.c
+
+    Test driver for ensuring the usage of md5.h, sha1.h and sha2.h as DLLs.
+*/
+
 #include <stdio.h>
 #include <stdint.h>
 #include "md5.h"

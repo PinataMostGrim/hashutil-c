@@ -2,6 +2,12 @@
     - Add readme / documentation to file
 */
 
+/*  test-hashutil.c
+
+    Test driver for md5.h, sha2.h and sha2.h. Ensures modules produce correct hashes
+    for files and strings.
+*/
+
 #include <stdint.h>
 #include <stdio.h>
 #include <assert.h>

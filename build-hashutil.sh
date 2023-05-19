@@ -1,4 +1,8 @@
-# Build script for hashutil-c.
+# Build script for hashutil.
+
+# Requirements:
+#   - clang accessible via PATH
+#   - Script executed from the project root
 
 # Save the script's folder
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
@@ -28,5 +32,5 @@ mkdir -p "$SCRIPT_DIR/$BuildFolder"
 pushd $BuildFolder > /dev/null 2>&1
 
 # Compile hashutil
-clang $CompilerFlags "$SCRIPT_DIR/src/hashutil.cpp" -o "hashutil"
+clang $CompilerFlags "$SCRIPT_DIR/src/hashutil.c" -o "hashutil"
 popd > /dev/null 2>&1
