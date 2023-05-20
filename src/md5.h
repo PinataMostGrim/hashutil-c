@@ -52,9 +52,12 @@ md5_context MD5_HashFile(const char *fileName);
 #include <stdbool.h>
 
 #if HASHUTIL_SLOW
-#define md5_assert(Expression) if (!(Expression)) {*(int *)0 = 0;}
+#include <assert.h>
+#define md5_static_assert(expression, string) static_assert(expression, string)
+#define md5_assert(expression) assert(expression)
 #else
-#define md5_assert(Expression)
+#define md5_static_assert(expression, string)
+#define md5_assert(expression)
 #endif
 
 #define MD5_ArrayCount(Array) (sizeof(Array) / sizeof((Array)[0]))
