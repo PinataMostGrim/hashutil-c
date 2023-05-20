@@ -15,17 +15,17 @@
     family of algorithms. Run 'hashutil --help' for usage instructions.
 */
 
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-#include <assert.h>
-
 #define HASHUTIL_MD5_IMPLEMENTATION
 #include "md5.h"
 #define HASHUTIL_SHA1_IMPLEMENTATION
 #include "sha1.h"
 #define HASHUTIL_SHA2_IMPLEMENTATION
 #include "sha2.h"
+
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include <assert.h>
 
 
 #define ArrayCount(Array) (sizeof(Array) / sizeof((Array)[0]))
