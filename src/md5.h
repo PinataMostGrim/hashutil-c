@@ -50,9 +50,6 @@ md5_context MD5_HashFile(const char *fileName);
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
-#if HASHUTIL_SLOW
-#include <string.h>
-#endif
 
 #if HASHUTIL_SLOW
 #define md5_assert(Expression) if (!(Expression)) {*(int *)0 = 0;}
@@ -70,6 +67,27 @@ md5_context MD5_HashFile(const char *fileName);
 extern "C" {
 #endif
 
+static void *MD5_MemoryCopy(void *destPtr, void const *sourcePtr, size_t size)
+{
+    md5_assert(size > 0);
+
+    unsigned char *source = (unsigned char *)sourcePtr;
+    unsigned char *dest = (unsigned char *)destPtr;
+    while(size--) *dest++ = *source++;
+
+    return destPtr;
+}
+
+static void *MD5_MemorySet(uint8_t *destPtr, int c, size_t count)
+{
+    md5_assert(count > 0);
+
+    unsigned char *dest = (unsigned char *)destPtr;
+    while(count--) *dest++ = (unsigned char)c;
+
+    return destPtr;
+}
+
 uint32_t MD5_GetVersion()
 {
     uint32_t result = HASHUTIL_MD5_VERSION;
@@ -83,29 +101,13 @@ static void MD5_InitializeContext(md5_context *context)
     context->State[1] = 0xefcdab89;
     context->State[2] = 0x98badcfe;
     context->State[3] = 0x10325476;
+
+
 #if HASHUTIL_SLOW
-    memset(context->Digest, 0, sizeof(context->Digest));
-    memset(context->DigestStr, 0, sizeof(context->DigestStr));
+    MD5_MemorySet(context->Digest, 0, sizeof(context->Digest));
+    MD5_MemorySet((uint8_t *)context->DigestStr, 0, sizeof(context->DigestStr));
 #endif
 }
-
-static void MD5_MemoryCopy(const uint8_t *source, uint8_t *destination, size_t count)
-{
-    for (int i = 0; i < count; ++i)
-    {
-        *(destination + i) = *(source + i);
-    }
-}
-
-
-static void MD5_MemoryZero(uint8_t *ptr, size_t count)
-{
-    for (int i = 0; i < count; ++i)
-    {
-        *(ptr + i) = 0;
-    }
-}
-
 
 static uint32_t MD5_CircularBitShiftLeft(uint32_t value, uint8_t count)
 {
@@ -193,7 +195,7 @@ static void MD5_UpdateHash(md5_context *context, uint8_t *ptr, uint32_t byteCoun
     // Create 512-bit block
     uint32_t block[16];
 #if HASHUTIL_SLOW
-    memset(block, 0, sizeof(block));
+    MD5_MemorySet((uint8_t *)block, 0xff, sizeof(block));
 #endif
 
     // Note (Aaron): Iterate over 512-bit (64 byte) blocks of the message.
@@ -313,7 +315,7 @@ static void MD5_UpdateHash(md5_context *context, uint8_t *ptr, uint32_t byteCoun
     }
 
     // Zero out block[] to prevent sensitive information being left in memory
-    MD5_MemoryZero((uint8_t *)&block, MD5_ArrayCount(block));
+    MD5_MemorySet((uint8_t *)&block, 0, MD5_ArrayCount(block));
 }
 
 
@@ -363,14 +365,17 @@ md5_context MD5_HashString(char *messagePtr)
     // where the length of the message remainder is between 477 and 512 bits.
     uint8_t buffer[MD5_BUFFER_BYTE_SIZE];
 #if HASHUTIL_SLOW
-    memset(buffer, 0, sizeof(buffer));
+    MD5_MemorySet((uint8_t *)buffer, 0xff, sizeof(buffer));
 #endif
     uint8_t *bufferPtr = buffer;
     bool useExtendedMargine = (byteCount >= (MD5_CHUNK_BYTE_COUNT - 8));
 
     // Copy message remainder into the buffer
     md5_assert(byteCount < MD5_BUFFER_BYTE_SIZE);
-    MD5_MemoryCopy((uint8_t *)(messagePtr - byteCount), bufferPtr, byteCount);
+    if (byteCount > 0)
+    {
+        MD5_MemoryCopy(bufferPtr, (uint8_t *)(messagePtr - byteCount), byteCount);
+    }
 
     // Apply padded 1
     uint8_t *paddingPtr = bufferPtr + byteCount;
@@ -398,7 +403,7 @@ md5_context MD5_HashString(char *messagePtr)
     MD5_UpdateHash(&result, bufferPtr, byteCount);
 
     // Zero out message remainder to prevent sensitive information being left in memory
-    MD5_MemoryZero(bufferPtr, byteCount);
+    MD5_MemorySet(bufferPtr, 0, byteCount);
 
     // Calculate hash and return
     MD5_ConstructDigest(&result);
@@ -414,7 +419,7 @@ md5_context MD5_HashFile(const char *fileName)
     // used as this is the size of blocks MD5 processes at one time.
     uint8_t buffer[MD5_BUFFER_BYTE_SIZE];
 #if HASHUTIL_SLOW
-    memset(buffer, 0, sizeof(buffer));
+    MD5_MemorySet((uint8_t *)buffer, 0xff, sizeof(buffer));
 #endif
     size_t bytesRead;
     uint32_t byteCount = 0;
@@ -491,8 +496,8 @@ md5_context MD5_HashFile(const char *fileName)
     md5_assert(byteCount == (paddingPtr - bufferPtr) + sizeof(uint64_t));
     MD5_UpdateHash(&result, bufferPtr, byteCount);
 
-    // Zero out buffer to prevent santize potentially sensitive information
-    MD5_MemoryZero(bufferPtr, byteCount);
+    // Zero out buffer to sanitize potentially sensitive information
+    MD5_MemorySet(bufferPtr, 0, byteCount);
 
     // Calculate hash and return
     MD5_ConstructDigest(&result);
