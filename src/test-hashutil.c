@@ -92,14 +92,14 @@ int main()
         // Test string hashing
         for (int i = 0; i < ArrayCount(messages); ++i)
         {
-            md5Context = MD5HashString(messages[i]);
+            md5Context = MD5_HashString(messages[i]);
             EvaluateResult(messages[i], md5MessageTargetDigests[i], md5Context.DigestStr);
         }
 
         // Test file hashing
         for (int i = 0; i < ArrayCount(filenames); ++i)
         {
-            md5Context = MD5HashFile(filenames[i]);
+            md5Context = MD5_HashFile(filenames[i]);
             EvaluateResult(filenames[i], md5FileTargetDigests[i], md5Context.DigestStr);
         }
 

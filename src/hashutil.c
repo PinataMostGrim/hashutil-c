@@ -242,11 +242,11 @@ int main(int argc, char const *argv[])
             md5_context context;
             if(arguments.fileFlag)
             {
-                context = MD5HashFile(arguments.messagePtr);
+                context = MD5_HashFile(arguments.messagePtr);
             }
             else
             {
-                context = MD5HashString(arguments.messagePtr);
+                context = MD5_HashString(arguments.messagePtr);
             }
 
             digest = context.DigestStr;

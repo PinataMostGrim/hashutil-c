@@ -18,11 +18,11 @@ int main(int argc, char const *argv[])
     char *messagePtr = (char *)"";
 
 
-    uint32_t md5Version = MD5GetVersion();
+    uint32_t md5Version = MD5_GetVersion();
     printf("md5.h version: %i\n", md5Version);
 
     messagePtr = (char *)"abcde";
-    md5_context md5Context = MD5HashString(messagePtr);
+    md5_context md5Context = MD5_HashString(messagePtr);
     printf("sha1 digest for 'abcde': %s\n", md5Context.DigestStr);
     printf("\n");
 
