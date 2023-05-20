@@ -8,10 +8,6 @@
     for files and strings.
 */
 
-#include <stdint.h>
-#include <stdio.h>
-#include <assert.h>
-
 #define HASHUTIL_MD5_IMPLEMENTATION
 #include "md5.h"
 #define HASHUTIL_SHA1_IMPLEMENTATION
@@ -20,6 +16,8 @@
 #include "sha2.h"
 #include "common.c"
 
+#include <stdint.h>
+#include <string.h>
 
 static int32_t PASSING_TESTS = 0;
 static int32_t FAILING_TESTS = 0;
@@ -82,10 +80,10 @@ void PerformMD5Tests()
         "d41d8cd98f00b204e9800998ecf8427e",
     };
 
-    static_assert(ArrayCount(Messages) == ArrayCount(md5MessageTargetDigests),
+    hashutil_static_assert(ArrayCount(Messages) == ArrayCount(md5MessageTargetDigests),
                   "Mismatched number of messages and target digests for MD5");
 
-    static_assert(ArrayCount(Filenames) == ArrayCount(md5FileTargetDigests),
+    hashutil_static_assert(ArrayCount(Filenames) == ArrayCount(md5FileTargetDigests),
                   "Mismatched number of files and target digests for MD5");
 
     // Test string hashing
@@ -127,10 +125,10 @@ void PerformSHA1Tests()
         "da39a3ee5e6b4b0d3255bfef95601890afd80709",
     };
 
-    static_assert(ArrayCount(Messages) == ArrayCount(sha1MessageTargetDigests),
+    hashutil_static_assert(ArrayCount(Messages) == ArrayCount(sha1MessageTargetDigests),
                   "Mismatched number of messages and target digests for SHA1");
 
-    static_assert(ArrayCount(Filenames) == ArrayCount(sha1FileTargetDigests),
+    hashutil_static_assert(ArrayCount(Filenames) == ArrayCount(sha1FileTargetDigests),
                   "Mismatched number of files and target digests for SHA1");
 
     // Test string hashing
@@ -172,10 +170,10 @@ void PerformSHA256Tests()
         "d14a028c2a3a2bc9476102bb288234c415a2b01f828ea62ac5b3e42f",
     };
 
-    static_assert(ArrayCount(Messages) == ArrayCount(sha224MessageTargetDigests),
+    hashutil_static_assert(ArrayCount(Messages) == ArrayCount(sha224MessageTargetDigests),
                   "Mismatched number of messages and target digests for SHA224");
 
-    static_assert(ArrayCount(Filenames) == ArrayCount(sha224FileTargetDigests),
+    hashutil_static_assert(ArrayCount(Filenames) == ArrayCount(sha224FileTargetDigests),
                   "Mismatched number of files and target digests for SHA224");
 
     // Hash strings
@@ -212,10 +210,10 @@ void PerformSHA256Tests()
         "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
     };
 
-    static_assert(ArrayCount(Messages) == ArrayCount(sha256MessageTargetDigests),
+    hashutil_static_assert(ArrayCount(Messages) == ArrayCount(sha256MessageTargetDigests),
                   "Mismatched number of messages and target digests for SHA256");
 
-    static_assert(ArrayCount(Filenames) == ArrayCount(sha256FileTargetDigests),
+    hashutil_static_assert(ArrayCount(Filenames) == ArrayCount(sha256FileTargetDigests),
                   "Mismatched number of files and target digests for SHA256");
 
     // Test string hashing
@@ -257,10 +255,10 @@ void PerformSHA512Tests()
         "6ed0dd02806fa89e25de060c19d3ac86cabb87d6a0ddd05c333b84f4",
     };
 
-    static_assert(ArrayCount(Messages) == ArrayCount(sha512_224MessageTargetDigests),
+    hashutil_static_assert(ArrayCount(Messages) == ArrayCount(sha512_224MessageTargetDigests),
                   "Mismatched number of messages and target digests for SHA512/224");
 
-    static_assert(ArrayCount(Filenames) == ArrayCount(sha512_224FileTargetDigests),
+    hashutil_static_assert(ArrayCount(Filenames) == ArrayCount(sha512_224FileTargetDigests),
                   "Mismatched number of files and target digests for SHA512/224");
 
     // Test string hashing
@@ -296,10 +294,10 @@ void PerformSHA512Tests()
         "c672b8d1ef56ed28ab87c3622c5114069bdd3ad7b8f9737498d0c01ecef0967a",
     };
 
-    static_assert(ArrayCount(Messages) == ArrayCount(sha512_256MessageTargetDigests),
+    hashutil_static_assert(ArrayCount(Messages) == ArrayCount(sha512_256MessageTargetDigests),
                   "Mismatched number of messages and target digests for SHA512/256");
 
-    static_assert(ArrayCount(Filenames) == ArrayCount(sha512_256FileTargetDigests),
+    hashutil_static_assert(ArrayCount(Filenames) == ArrayCount(sha512_256FileTargetDigests),
                   "Mismatched number of files and target digests for SHA512/256");
 
     // Test string hashing
@@ -335,10 +333,10 @@ void PerformSHA512Tests()
         "38b060a751ac96384cd9327eb1b1e36a21fdb71114be07434c0cc7bf63f6e1da274edebfe76f65fbd51ad2f14898b95b",
     };
 
-    static_assert(ArrayCount(Messages) == ArrayCount(sha384MessageTargetDigests),
+    hashutil_static_assert(ArrayCount(Messages) == ArrayCount(sha384MessageTargetDigests),
                   "Mismatched number of messages and target digests for SHA384");
 
-    static_assert(ArrayCount(Filenames) == ArrayCount(sha384FileTargetDigests),
+    hashutil_static_assert(ArrayCount(Filenames) == ArrayCount(sha384FileTargetDigests),
                   "Mismatched number of files and target digests for SHA384");
 
     // Test string hashing
@@ -374,10 +372,10 @@ void PerformSHA512Tests()
         "cf83e1357eefb8bdf1542850d66d8007d620e4050b5715dc83f4a921d36ce9ce47d0d13c5d85f2b0ff8318d2877eec2f63b931bd47417a81a538327af927da3e",
     };
 
-    static_assert(ArrayCount(Messages) == ArrayCount(sha512MessageTargetDigests),
+    hashutil_static_assert(ArrayCount(Messages) == ArrayCount(sha512MessageTargetDigests),
                   "Mismatched number of messages and target digests for SHA512");
 
-    static_assert(ArrayCount(Filenames) == ArrayCount(sha512FileTargetDigests),
+    hashutil_static_assert(ArrayCount(Filenames) == ArrayCount(sha512FileTargetDigests),
                   "Mismatched number of files and target digests for SHA512");
 
     // Test string hashing

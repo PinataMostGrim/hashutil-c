@@ -3,11 +3,13 @@
     Test driver for ensuring the usage of md5.h, sha1.h and sha2.h as DLLs.
 */
 
-#include <stdio.h>
-#include <stdint.h>
 #include "md5.h"
 #include "sha1.h"
 #include "sha2.h"
+
+#include <stdio.h>
+#include <stdint.h>
+
 #pragma comment (lib, "md5.lib")
 #pragma comment (lib, "sha1.lib")
 #pragma comment (lib, "sha2.lib")

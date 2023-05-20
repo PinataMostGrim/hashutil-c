@@ -22,13 +22,11 @@
 #define HASHUTIL_SHA2_IMPLEMENTATION
 #include "sha2.h"
 
+#include "common.c"
+
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include <assert.h>
-
-
-#define ArrayCount(Array) (sizeof(Array) / sizeof((Array)[0]))
 
 
 static char *HashAlgorithmMnemonics[] =
@@ -91,7 +89,7 @@ hash_algorithm GetHashAlgorithm(char *algorithmPtr)
 
 char *GetHashMenemonic(hash_algorithm algorithm)
 {
-    static_assert(ArrayCount(HashAlgorithmMnemonics) == hash_algorithm_count,
+    hashutil_static_assert(ArrayCount(HashAlgorithmMnemonics) == hash_algorithm_count,
               "'hash_algorithm' and 'HashAlgorithmMnemonics' do not share the sane number of elements\n");
 
     return HashAlgorithmMnemonics[algorithm];

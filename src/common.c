@@ -1,14 +1,16 @@
 #ifndef HASHUTIL_COMMON
 #define HASHUTIL_COMMON
 
-#include <stddef.h>
 #include <stdint.h>
 #include <stdbool.h>
 
 #if HASHUTIL_SLOW
-#define Assert(Expression) if (!(Expression)) {*(int *)0 = 0;}
+#include <assert.h>
+#define hashutil_static_assert(expression, string) static_assert(expression, string)
+#define hashutil_assert(expression) assert(expression)
 #else
-#define Assert(Expression)
+#define hashutil_static_assert(expression, string)
+#define hashutil_assert(Expression)
 #endif
 
 #define ArrayCount(Array) (sizeof(Array) / sizeof((Array)[0]))
@@ -24,7 +26,7 @@ static bool IsSystemLittleEndian()
 
 static void *MemoryCopy(void *destPtr, void const *sourcePtr, size_t size)
 {
-    Assert(size > 0);
+    hashutil_assert(size > 0);
 
     unsigned char *source = (unsigned char *)sourcePtr;
     unsigned char *dest = (unsigned char *)destPtr;
@@ -35,7 +37,7 @@ static void *MemoryCopy(void *destPtr, void const *sourcePtr, size_t size)
 
 static void *MemorySet(uint8_t *destPtr, int c, size_t count)
 {
-    Assert(count > 0);
+    hashutil_assert(count > 0);
 
     unsigned char *dest = (unsigned char *)destPtr;
     while(count--) *dest++ = (unsigned char)c;
