@@ -15,11 +15,6 @@
     family of algorithms. Run 'hashutil --help' for usage instructions.
 */
 
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-#include <assert.h>
-
 #define HASHUTIL_MD5_IMPLEMENTATION
 #include "md5.h"
 #define HASHUTIL_SHA1_IMPLEMENTATION
@@ -27,8 +22,11 @@
 #define HASHUTIL_SHA2_IMPLEMENTATION
 #include "sha2.h"
 
+#include "common.c"
 
-#define ArrayCount(Array) (sizeof(Array) / sizeof((Array)[0]))
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
 
 
 static char *HashAlgorithmMnemonics[] =
@@ -91,7 +89,7 @@ hash_algorithm GetHashAlgorithm(char *algorithmPtr)
 
 char *GetHashMenemonic(hash_algorithm algorithm)
 {
-    static_assert(ArrayCount(HashAlgorithmMnemonics) == hash_algorithm_count,
+    hashutil_static_assert(ArrayCount(HashAlgorithmMnemonics) == hash_algorithm_count,
               "'hash_algorithm' and 'HashAlgorithmMnemonics' do not share the sane number of elements\n");
 
     return HashAlgorithmMnemonics[algorithm];
@@ -242,11 +240,16 @@ int main(int argc, char const *argv[])
             md5_context context;
             if(arguments.fileFlag)
             {
-                context = MD5HashFile(arguments.messagePtr);
+                context = MD5_HashFile(arguments.messagePtr);
             }
             else
             {
-                context = MD5HashString(arguments.messagePtr);
+                context = MD5_HashString(arguments.messagePtr);
+            }
+
+            if (context.Error)
+            {
+                PrintErrorAndExit(context.ErrorStr);
             }
 
             digest = context.DigestStr;
