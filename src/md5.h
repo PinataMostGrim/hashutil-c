@@ -199,22 +199,22 @@ static uint32_t MD5_TransformII(uint32_t A, uint32_t B, uint32_t C, uint32_t D, 
 
 static void MD5_UpdateHash(md5_context *context, uint8_t *ptr, uint64_t byteCount)
 {
-    // Assert that the block length is divisible by 512 bits (64 bytes)
     md5_assert(byteCount % MD5_MESSAGE_BLOCK_SIZE == 0);
 
-    // Create 512-bit block
     uint32_t block[16];
 #if HASHUTIL_SLOW
     MD5_MemorySet((uint8_t *)block, 0xff, sizeof(block));
 #endif
 
-    // Note (Aaron): Iterate over 512-bit (64 byte) blocks of the message.
-    // 'i' represents the byte position in the message.
+    // Iterate over blocks of the message
+    // 'i' holds the current block's byte position in the message
     for (uint32_t i = 0; i < (byteCount); i+=MD5_MESSAGE_BLOCK_SIZE)
     {
+        // 'j' holds the word position from the start of the current block being processed
         for (int j = 0; j < MD5_ArrayCount(block); ++j)
         {
-            // Note (Aaron): This will work regardless of endianness
+            // Convert from memory-order to message order. SHA256 is processed in 32bit words.
+            // If it used 8-bit blocks, there would be no need to re-order the message chunks.
             block[j] = (uint32_t)(*(ptr + i + (j * 4)))
                 | (uint32_t)(*(ptr + i + (j * 4) + 1) << 8)
                 | (uint32_t)(*(ptr + i + (j * 4) + 2) << 16)
@@ -329,6 +329,9 @@ static void MD5_UpdateHash(md5_context *context, uint8_t *ptr, uint64_t byteCoun
 
 static void MD5_ConstructDigest(md5_context *context)
 {
+    md5_static_assert(MD5_ArrayCount(context->DigestStr) == (128 / 4 + 1),
+                      "Buffer is not large enough to hold MD5 digest");
+
     // Extract digest values, convert to string, and store in context
     unsigned int i, j;
     for (i = 0, j = 0; i < 4; ++i, j+=4)
@@ -357,6 +360,7 @@ md5_context MD5_HashString(char *messagePtr)
     md5_static_assert(UINT8_MAX > (MD5_MESSAGE_BLOCK_SIZE * 2),
                       "messageBlockByteCount cannot fit within a uint8_t");
 
+    // Iterate over message until we can no longer fill a message block
     while (*messagePtr != 0x00)
     {
         md5_assert(messageBlockByteCount < MD5_MESSAGE_BLOCK_SIZE);
@@ -365,6 +369,7 @@ md5_context MD5_HashString(char *messagePtr)
         messageBlockByteCount++;
         context.MessageLengthBits += 8;
 
+        // Process the message in blocks of 512 bits (64 bytes or sixteen 32-bit words)
         if(messageBlockByteCount == MD5_MESSAGE_BLOCK_SIZE)
         {
             MD5_UpdateHash(&context, (uint8_t *)(messagePtr - messageBlockByteCount), messageBlockByteCount);
@@ -373,8 +378,9 @@ md5_context MD5_HashString(char *messagePtr)
     }
 
     // Allocate memory to store the message remainder + padding + encoded message length
-    // We use a buffer length of 1024 bits to cover the worst case scenario,
-    // where the length of the message remainder is between 477 and 512 bits.
+    // Note (Aaron): We use a double sized buffer to cover the worst case scenario
+    // where the message remainder + padding + message length cannot fit into one
+    // message block.
     uint8_t buffer[MD5_MESSAGE_BLOCK_SIZE * 2];
     uint8_t *bufferPtr = buffer;
     uint8_t bufferSizeBytes = MD5_MESSAGE_BLOCK_SIZE * 2;
@@ -414,16 +420,14 @@ md5_context MD5_HashString(char *messagePtr)
     uint64_t *sizePtr = (uint64_t *)paddingPtr;
     *sizePtr = (uint64_t)context.MessageLengthBits;
 
-    // Perform final hash update
+    // Apply final hash update and construct the digest
     messageBlockByteCount = useFullBuffer ? bufferSizeBytes : MD5_MESSAGE_BLOCK_SIZE;
     md5_assert(messageBlockByteCount == (paddingPtr - bufferPtr) + sizeof(uint64_t));
     MD5_UpdateHash(&context, bufferPtr, messageBlockByteCount);
+    MD5_ConstructDigest(&context);
 
     // Zero out message remainder to prevent sensitive information being left in memory
     MD5_MemorySet(bufferPtr, 0, messageBlockByteCount);
-
-    // Calculate hash and return
-    MD5_ConstructDigest(&context);
 
     return context;
 }
@@ -445,6 +449,8 @@ md5_context MD5_HashFile(const char *fileName)
         return result;
     }
 
+    // Note (Aaron): Create a buffer that can hold two full message blocks as
+    // we will potentially use the extra space when applying padding later.
     uint8_t buffer[MD5_MESSAGE_BLOCK_SIZE * 2];
     uint8_t *bufferPtr = buffer;
     uint8_t bufferSizeBytes = MD5_MESSAGE_BLOCK_SIZE * 2;
@@ -470,6 +476,7 @@ md5_context MD5_HashFile(const char *fileName)
         md5_assert(blockBytesRead <= MD5_MESSAGE_BLOCK_SIZE);
         result.MessageLengthBits += ((uint32_t)blockBytesRead * 8);
 
+        // Process the message in blocks of 512 bits (64 bytes or sixteen 32-bit words)
         if (blockBytesRead == MD5_MESSAGE_BLOCK_SIZE)
         {
             MD5_UpdateHash(&result, bufferPtr, blockBytesRead);

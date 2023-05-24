@@ -178,15 +178,15 @@ static void SHA1_UpdateHash(sha1_context *context, uint8_t *messagePtr, uint64_t
 
     uint32_t temp = 0;
 
-    // 'i' holds the position (offset from ptr) of the current 512 bit block of the message being processed
+    // Iterate over blocks of the message
+    // 'i' holds the current block's byte position in the message
     for (uint64_t i = 0; i < byteCount; i+=SHA1_MESSAGE_BLOCK_SIZE)
     {
-        // 'j' holds the word position from the start of the current block of 512 bits being processed
-        // 16 words == 64 bytes == 512 bits
+        // 'j' holds the word position from the start of the current block being processed
         for (int j = 0; j < 16; ++j)
         {
-            // Note (Aaron): Because we read memory in blocks of 32 bits rather than 8,
-            // we need to reverse the endianness to restore the original message's byte order.
+            // Convert from memory-order to message order. SHA256 is processed in 32bit words.
+            // If it used 8-bit blocks, there would be no need to re-order the message chunks.
             W[j] = (uint32_t)(*(messagePtr + i + (j * 4)) << 24)
                 | (uint32_t)(*(messagePtr + i + (j * 4) + 1) << 16)
                 | (uint32_t)(*(messagePtr + i + (j * 4) + 2) << 8)
@@ -291,6 +291,9 @@ static void SHA1_UpdateHash(sha1_context *context, uint8_t *messagePtr, uint64_t
 
 static void SHA1_ConstructDigest(sha1_context *context)
 {
+    sha1_static_assert(SHA1_ArrayCount(context->DigestStr) == (160 / 4 + 1),
+                       "Buffer is not large enough to hold SHA1 digest");
+
     sprintf(context->DigestStr,
             "%08x%08x%08x%08x%08x",
             context->H0,
@@ -310,6 +313,7 @@ sha1_context SHA1_HashString(char *messagePtr)
     sha1_static_assert(UINT8_MAX > (SHA1_MESSAGE_BLOCK_SIZE * 2),
                        "messageBlockByteCount cannot fit within a uint8_t");
 
+    // Iterate over message until we can no longer fill a message block
     while(*messagePtr != 0x00)
     {
         sha1_assert(messageBlockByteCount <= SHA1_MESSAGE_BLOCK_SIZE);
@@ -338,9 +342,9 @@ sha1_context SHA1_HashString(char *messagePtr)
     }
 
     // Allocate a buffer to store the message remainder + padding + message length
-    // Note (Aaron): We use a buffer length of 1024 bits to cover the worst case
-    // scenario where extra padding is required (where the message remainder is
-    // between 447 bits and 512 bits).
+    // Note (Aaron): We use a double sized buffer to cover the worst case scenario
+    // where the message remainder + padding + message length cannot fit into one
+    // message block.
     uint8_t buffer[SHA1_MESSAGE_BLOCK_SIZE * 2];
     uint8_t *bufferPtr = buffer;
     uint8_t bufferSizeBytes = SHA1_MESSAGE_BLOCK_SIZE * 2;
@@ -348,16 +352,13 @@ sha1_context SHA1_HashString(char *messagePtr)
                        "bufferSizeBytes cannot fit within a uint8_t");
 
 #if HASHUTIL_SLOW
-    // Note (Aaron): Useful for debug purposes to pack the buffer's bits with 1s
+    // Note (Aaron): Packing the buffer's bits with 1s for debug purposes
     SHA1_MemorySet(bufferPtr, 0xff, sizeof(buffer));
 #endif
 
-    // Apply the final hash update with padding
-    // 8 bytes are reserved to store the message length as a 64-bit integer and 1 byte
-    // holds the mandatory padding
     sha1_assert(messageBlockByteCount <= (bufferSizeBytes - SHA1_MESSAGE_LENGTH_BLOCK_SIZE - 1));
 
-    // Copy message remainder into buffer
+    // Copy message remainder (if any) into the buffer
     if (messageBlockByteCount > 0)
     {
         SHA1_MemoryCopy(bufferPtr, (uint8_t *)(messagePtr - messageBlockByteCount), messageBlockByteCount);
@@ -417,6 +418,8 @@ sha1_context SHA1_HashFile(const char *fileName)
         return context;
     }
 
+    // Note (Aaron): Create a buffer that can hold two full message blocks as
+    // we will potentially use the extra space when applying padding later.
     uint8_t buffer[SHA1_MESSAGE_BLOCK_SIZE * 2];
     uint8_t *bufferPtr = buffer;
     uint8_t bufferSizeBytes = SHA1_MESSAGE_BLOCK_SIZE * 2;
@@ -424,7 +427,7 @@ sha1_context SHA1_HashFile(const char *fileName)
                        "bufferSizeBytes cannot fit within a uint8_t");
 
 #if HASHUTIL_SLOW
-    // Note (Aaron): Useful for debug purposes to pack the buffer's bits with 1s
+    // Note (Aaron): Packing the buffer's bits with 1s for debug purposes
     SHA1_MemorySet(bufferPtr, 0xff, bufferSizeBytes);
 #endif
 
@@ -453,6 +456,7 @@ sha1_context SHA1_HashFile(const char *fileName)
             return context;
         }
 
+        // Process the message in blocks of 512 bits (64 bytes or sixteen 32-bit words)
         if (blockBytesRead == SHA1_MESSAGE_BLOCK_SIZE)
         {
             SHA1_UpdateHash(&context, bufferPtr, blockBytesRead);
@@ -478,7 +482,6 @@ sha1_context SHA1_HashFile(const char *fileName)
 
     fclose(file);
 
-    // Apply the final hash update with padding
     sha1_assert(blockBytesRead < (bufferSizeBytes - SHA1_MESSAGE_LENGTH_BLOCK_SIZE - 1));
 
     // Apply padded 1

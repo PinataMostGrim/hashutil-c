@@ -1,5 +1,4 @@
 /* TODO (Aaron):
-    - Add error flag and messages to all context structs and return from hash methods rather than exit program
     - Add compare hash functionality ('-c' or '--compare' sets COMPARE_FLAG bool)
     - Support case insensitive algorithm strings
     - Add a method to each header for retrieving supported algorithms?
