@@ -18,7 +18,7 @@
 
 static uint32_t const HASHUTIL_MD5_VERSION = 1;
 
-typedef struct md5_context
+typedef struct
 {
     uint32_t MessageLengthBits;
     uint32_t State[4];
@@ -62,11 +62,19 @@ md5_context MD5_HashFile(const char *fileName);
 #define MD5_ArrayCount(Array) (sizeof(Array) / sizeof((Array)[0]))
 
 #define MD5_MESSAGE_BLOCK_SIZE 64
+#define MD5_MESSAGE_LENGTH_BLOCK_SHA256 8
 
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+uint32_t MD5_GetVersion()
+{
+    uint32_t result = HASHUTIL_MD5_VERSION;
+    return result;
+}
+
 
 static void *MD5_MemoryCopy(void *destPtr, void const *sourcePtr, size_t size)
 {
@@ -79,6 +87,7 @@ static void *MD5_MemoryCopy(void *destPtr, void const *sourcePtr, size_t size)
     return destPtr;
 }
 
+
 static void *MD5_MemorySet(uint8_t *destPtr, int c, size_t count)
 {
     md5_assert(count > 0);
@@ -89,11 +98,6 @@ static void *MD5_MemorySet(uint8_t *destPtr, int c, size_t count)
     return destPtr;
 }
 
-uint32_t MD5_GetVersion()
-{
-    uint32_t result = HASHUTIL_MD5_VERSION;
-    return result;
-}
 
 static void MD5_InitializeContext(md5_context *context)
 {
@@ -112,6 +116,7 @@ static void MD5_InitializeContext(md5_context *context)
     MD5_MemorySet((uint8_t *)context->ErrorStr, 0, sizeof(context->ErrorStr));
 #endif
 }
+
 
 // 32-bit Circular bit shift left
 static uint32_t MD5_ROTL(uint32_t value, uint8_t count)
@@ -195,7 +200,7 @@ static uint32_t MD5_TransformII(uint32_t A, uint32_t B, uint32_t C, uint32_t D, 
 static void MD5_UpdateHash(md5_context *context, uint8_t *ptr, uint64_t byteCount)
 {
     // Assert that the block length is divisible by 512 bits (64 bytes)
-    md5_assert(byteCount % 64 == 0);
+    md5_assert(byteCount % MD5_MESSAGE_BLOCK_SIZE == 0);
 
     // Create 512-bit block
     uint32_t block[16];
@@ -205,11 +210,9 @@ static void MD5_UpdateHash(md5_context *context, uint8_t *ptr, uint64_t byteCoun
 
     // Note (Aaron): Iterate over 512-bit (64 byte) blocks of the message.
     // 'i' represents the byte position in the message.
-    for (uint32_t i = 0;
-         i < (byteCount);
-         i+=64)
+    for (uint32_t i = 0; i < (byteCount); i+=MD5_MESSAGE_BLOCK_SIZE)
     {
-        for (int j = 0; j < 16; ++j)
+        for (int j = 0; j < MD5_ArrayCount(block); ++j)
         {
             // Note (Aaron): This will work regardless of endianness
             block[j] = (uint32_t)(*(ptr + i + (j * 4)))
@@ -379,11 +382,11 @@ md5_context MD5_HashString(char *messagePtr)
                       "bufferSizeBytes cannot fit within a uint8_t");
 
 #if HASHUTIL_SLOW
-    // Note (Aaron): Packing the buffer's bits with 1s is useful for debug purposes
+    // Note (Aaron): Packing the buffer's bits with 1s for debug purposes
     MD5_MemorySet(bufferPtr, 0xff, sizeof(buffer));
 #endif
 
-    md5_assert(messageBlockByteCount < MD5_MESSAGE_BLOCK_SIZE * 2);
+    md5_assert(messageBlockByteCount <= (bufferSizeBytes - MD5_MESSAGE_LENGTH_BLOCK_SHA256 - 1));
 
     // Copy message remainder (if any) into the buffer
     if (messageBlockByteCount > 0)
@@ -393,20 +396,18 @@ md5_context MD5_HashString(char *messagePtr)
 
     // Apply padded 1
     uint8_t *paddingPtr = bufferPtr + messageBlockByteCount;
-    *paddingPtr = (1 << 7);
-    paddingPtr++;
+    *paddingPtr++ = (1 << 7);
 
-    bool useFullBuffer = (messageBlockByteCount >= (MD5_MESSAGE_BLOCK_SIZE - 8));
+    bool useFullBuffer = (messageBlockByteCount >= (MD5_MESSAGE_BLOCK_SIZE - MD5_MESSAGE_LENGTH_BLOCK_SHA256 - 1));
 
     // Apply padded 0s
     uint8_t *paddingEndPtr = useFullBuffer
-        ? bufferPtr + bufferSizeBytes - 8
-        : bufferPtr + MD5_MESSAGE_BLOCK_SIZE - 8;
+        ? bufferPtr + bufferSizeBytes - MD5_MESSAGE_LENGTH_BLOCK_SHA256
+        : bufferPtr + MD5_MESSAGE_BLOCK_SIZE - MD5_MESSAGE_LENGTH_BLOCK_SHA256;
 
     while (paddingPtr < paddingEndPtr)
     {
-        *paddingPtr = 0;
-        paddingPtr++;
+        *paddingPtr++ = 0;
     }
 
     // Append the length of the message as a 64-bit representation
@@ -451,6 +452,7 @@ md5_context MD5_HashFile(const char *fileName)
                       "bufferSizeBytes cannot fit within a uint8_t");
 
 #if HASHUTIL_SLOW
+    // Note (Aaron): Packing the buffer's bits with 1s for debug purposes
     MD5_MemorySet((uint8_t *)buffer, 0xff, sizeof(buffer));
 #endif
 
@@ -495,20 +497,18 @@ md5_context MD5_HashFile(const char *fileName)
 
     // Apply padded 1
     uint8_t *paddingPtr = bufferPtr + blockBytesRead;
-    *paddingPtr = (1 << 7);
-    paddingPtr++;
+    *paddingPtr++ = (1 << 7);
 
-    bool useFullBuffer = (blockBytesRead >= (MD5_MESSAGE_BLOCK_SIZE - 8));
+    bool useFullBuffer = (blockBytesRead >= (MD5_MESSAGE_BLOCK_SIZE - MD5_MESSAGE_LENGTH_BLOCK_SHA256 - 1));
 
     // Apply padded 0s
     uint8_t *paddingEndPtr = useFullBuffer
-        ? bufferPtr + bufferSizeBytes - 8
-        : bufferPtr + MD5_MESSAGE_BLOCK_SIZE - 8;
+        ? bufferPtr + bufferSizeBytes - MD5_MESSAGE_LENGTH_BLOCK_SHA256
+        : bufferPtr + MD5_MESSAGE_BLOCK_SIZE - MD5_MESSAGE_LENGTH_BLOCK_SHA256;
 
     while (paddingPtr < paddingEndPtr)
     {
-        *paddingPtr = 0;
-        paddingPtr++;
+        *paddingPtr++ = 0;
     }
 
     // Append the length of the message as a 64-bit representation
