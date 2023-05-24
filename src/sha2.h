@@ -571,6 +571,7 @@ static void SHA2_UpdateHashSHA256(sha2_256_context *context, uint8_t *messagePtr
         {
             // Convert from memory-order to message order. SHA256 is processed in 32bit words.
             // If it used 8-bit blocks, there would be no need to re-order the message chunks.
+            // TODO (Aaron): I don't think this works regardless of the machine's endianness. Explore.
             W[j] = ((uint32_t)*(messagePtr + i + (j * 4)) << 24)
                  | ((uint32_t)*(messagePtr + i + (j * 4) + 1) << 16)
                  | ((uint32_t)*(messagePtr + i + (j * 4) + 2) << 8)
@@ -658,6 +659,7 @@ static void SHA2_UpdateHashSHA512(sha2_512_context *context, uint8_t *messagePtr
         // 'j' holds the word position from the start of the current block being processed
         for (int j = 0; j < 16; ++j)
         {
+            // TODO (Aaron): Use a MirrorBits function here instead
             W[j] = ((uint64_t)*(messagePtr + i + (j * 8) + 0) << 56)
                 | ((uint64_t)*(messagePtr + i + (j * 8) + 1) << 48)
                 | ((uint64_t)*(messagePtr + i + (j * 8) + 2) << 40)

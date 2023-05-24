@@ -185,8 +185,11 @@ static void SHA1_UpdateHash(sha1_context *context, uint8_t *messagePtr, uint64_t
         // 'j' holds the word position from the start of the current block being processed
         for (int j = 0; j < 16; ++j)
         {
+            // TODO (Aaron): Use the casting form here that is used in 'sha2.h'
             // Convert from memory-order to message order. SHA256 is processed in 32bit words.
             // If it used 8-bit blocks, there would be no need to re-order the message chunks.
+            // TODO (Aaron): I don't think this works regardless of the machine's endianness. Explore.
+            // TODO (Aaron): Use a MirrorBits function here instead
             W[j] = (uint32_t)(*(messagePtr + i + (j * 4)) << 24)
                 | (uint32_t)(*(messagePtr + i + (j * 4) + 1) << 16)
                 | (uint32_t)(*(messagePtr + i + (j * 4) + 2) << 8)
@@ -286,6 +289,10 @@ static void SHA1_UpdateHash(sha1_context *context, uint8_t *messagePtr, uint64_t
         context->H3 += D;
         context->H4 += E;
     }
+
+    // TODO (Aaron): Is zeroing out W necessary here?
+    // MemoryZero((uint8_t *)&W, sizeof(W));
+    // TODO (Aaron): Zero out temp?
 }
 
 
@@ -356,6 +363,7 @@ sha1_context SHA1_HashString(char *messagePtr)
     SHA1_MemorySet(bufferPtr, 0xff, sizeof(buffer));
 #endif
 
+    // TODO (Aaron): Create a test runner case to test the <=
     sha1_assert(messageBlockByteCount <= (bufferSizeBytes - SHA1_MESSAGE_LENGTH_BLOCK_SIZE - 1));
 
     // Copy message remainder (if any) into the buffer

@@ -35,6 +35,13 @@ static void *MemoryCopy(void *destPtr, void const *sourcePtr, size_t size)
     return destPtr;
 }
 
+// TODO (Aaron): memset_explicit() uses this function signature and converts 'c'
+// into an unsigned char. I don't fully understand why. Investigate.
+// - [link](https://www.open-std.org/jtc1/sc22/wg14/www/docs/n2897.htm)
+// TODO (Aaron): 'memset()' may be optimized away by the compiler if the
+// object it operates on is never accessed again and can't be used to scrub
+// sensitive information from memory.
+// Look into whether or not the same thing occurs with this method.
 static void *MemorySet(uint8_t *destPtr, int c, size_t count)
 {
     hashutil_assert(count > 0);
@@ -43,6 +50,27 @@ static void *MemorySet(uint8_t *destPtr, int c, size_t count)
     while(count--) *dest++ = (unsigned char)c;
 
     return destPtr;
+}
+
+// TODO (Aaron): I should test the speed of mirroring bits this way
+// vs the method used for loading message blocks into the W[] registers
+
+// TODO (Aaron): Test this
+// Swap endianness of 16 bit value
+static void MirrorBits16(uint16_t *bits)
+{
+    *bits = ((*bits >> 8) & 0xff00)
+          | ((*bits << 8) & 0xff00);
+}
+
+// TODO (Aaron): Test this
+// Swap endianness of 32 bit value
+static void MirrorBits32(uint32_t *bits)
+{
+    *bits = ((*bits >> 24) & 0xff000000)
+          | ((*bits >> 8) & 0xff000000)
+          | ((*bits << 8) & 0xff000000)
+          | ((*bits << 24) & 0xff000000);
 }
 
 // Swap endianness of 64 bit value

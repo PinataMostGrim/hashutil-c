@@ -34,3 +34,6 @@ pushd $BuildFolder > /dev/null 2>&1
 # Compile hashutil
 clang $CompilerFlags "$SCRIPT_DIR/src/test-hashutil.c" -o "test-hashutil"
 popd > /dev/null 2>&1
+
+
+# TODO: Exit with an error code if the clang build fails so that the sublime text build system can respond

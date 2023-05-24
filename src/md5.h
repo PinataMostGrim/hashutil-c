@@ -215,6 +215,8 @@ static void MD5_UpdateHash(md5_context *context, uint8_t *ptr, uint64_t byteCoun
         {
             // Convert from memory-order to message order. SHA256 is processed in 32bit words.
             // If it used 8-bit blocks, there would be no need to re-order the message chunks.
+            // TODO (Aaron): I don't think this will work regardless of endiannness. Explore.
+            // TODO (Aaron): Use a mirror bits function here instead
             block[j] = (uint32_t)(*(ptr + i + (j * 4)))
                 | (uint32_t)(*(ptr + i + (j * 4) + 1) << 8)
                 | (uint32_t)(*(ptr + i + (j * 4) + 2) << 16)
@@ -322,6 +324,7 @@ static void MD5_UpdateHash(md5_context *context, uint8_t *ptr, uint64_t byteCoun
         context->State[3] += D;
     }
 
+    // TODO (Aaron): I'm not sure this is necessary on modern machines, but maybe on embedded devices
     // Zero out block[] to prevent sensitive information being left in memory
     MD5_MemorySet((uint8_t *)&block, 0, MD5_ArrayCount(block));
 }
