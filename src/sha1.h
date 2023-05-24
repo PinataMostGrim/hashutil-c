@@ -61,7 +61,6 @@ sha1_context SHA1_HashFile(const char *fileName);
 #include <stdbool.h>
 
 #if HASHUTIL_SLOW
-#include <string.h>
 #include <assert.h>
 #endif
 
@@ -88,6 +87,29 @@ uint32_t SHA1_GetVersion()
 }
 
 
+static void *SHA1_MemoryCopy(void *destPtr, void const *sourcePtr, size_t size)
+{
+    sha1_assert(size > 0);
+
+    unsigned char *source = (unsigned char *)sourcePtr;
+    unsigned char *dest = (unsigned char *)destPtr;
+    while(size--) *dest++ = *source++;
+
+    return destPtr;
+}
+
+
+static void *SHA1_MemorySet(uint8_t *destPtr, int c, size_t count)
+{
+    sha1_assert(count > 0);
+
+    unsigned char *dest = (unsigned char *)destPtr;
+    while(count--) *dest++ = (unsigned char)c;
+
+    return destPtr;
+}
+
+
 static void SHA1_InitializeContext(sha1_context *context)
 {
     context->MessageLengthBits = 0;
@@ -97,17 +119,8 @@ static void SHA1_InitializeContext(sha1_context *context)
     context->H3 = 0x10325476;
     context->H4 = 0xc3d2e1f0;
 #if HASHUTIL_SLOW
-    memset(context->DigestStr, 0, sizeof(context->DigestStr));
+    SHA1_MemorySet((uint8_t *)context->DigestStr, 0, sizeof(context->DigestStr));
 #endif
-}
-
-
-static void SHA1_MemoryCopy(const uint8_t *source, uint8_t *destination, size_t count)
-{
-    for (int i = 0; i < count; ++i)
-    {
-        *(destination + i) = *(source + i);
-    }
 }
 
 
@@ -135,7 +148,7 @@ static void SHA1_UpdateHash(sha1_context *context, uint8_t *messagePtr, uint64_t
 
     uint32_t W[80];
 #if HASHUTIL_SLOW
-    memset(W, 0, sizeof(W));
+    SHA1_MemorySet((uint8_t *)W, 0, sizeof(W));
 #endif
 
     uint32_t temp = 0;
@@ -292,7 +305,7 @@ sha1_context SHA1_HashString(char *messagePtr)
 
 #if HASHUTIL_SLOW
     // Note (Aaron): Useful for debug purposes to pack the buffer's bits with 1s
-    memset(bufferPtr, 0xff, SHA1_BUFFER_SIZE_BYTES);
+    SHA1_MemorySet(bufferPtr, 0xff, SHA1_BUFFER_SIZE_BYTES);
 #endif
 
     // Apply the final hash update with padding
@@ -305,7 +318,10 @@ sha1_context SHA1_HashString(char *messagePtr)
     sha1_assert(byteCount < ((useExtendedBuffer ? SHA1_BUFFER_SIZE_BYTES : SHA1_BLOCK_SIZE_BYTES) - 8 - 1));
 
     // Copy message remainder into buffer
-    SHA1_MemoryCopy((uint8_t *)(messagePtr - byteCount), bufferPtr, byteCount);
+    if (byteCount > 0)
+    {
+        SHA1_MemoryCopy(bufferPtr, (uint8_t *)(messagePtr - byteCount), byteCount);
+    }
 
     // Apply padded 1
     uint8_t *paddingPtr = bufferPtr + byteCount;
@@ -362,7 +378,7 @@ sha1_context SHA1_HashFile(const char *fileName)
 
 #if HASHUTIL_SLOW
     // Note (Aaron): Useful for debug purposes to pack the buffer's bits with 1s
-    memset(bufferPtr, 0xff, SHA1_BUFFER_SIZE_BYTES);
+    SHA1_MemorySet(bufferPtr, 0xff, SHA1_BUFFER_SIZE_BYTES);
 #endif
 
     size_t bytesRead;
