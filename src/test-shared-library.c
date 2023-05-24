@@ -29,11 +29,11 @@ int main(int argc, char const *argv[])
     printf("\n");
 
 
-    uint32_t sha1Version = SHA1GetVersion();
+    uint32_t sha1Version = SHA1_GetVersion();
     printf("sha1.h version: %i\n", sha1Version);
 
     messagePtr = (char *)"abcde";
-    sha1_context sha1Context = SHA1HashString(messagePtr);
+    sha1_context sha1Context = SHA1_HashString(messagePtr);
     printf("sha1 digest for 'abcde': %s\n", sha1Context.DigestStr);
     printf("\n");
 

@@ -260,11 +260,11 @@ int main(int argc, char const *argv[])
             sha1_context context;
             if(arguments.fileFlag)
             {
-                context = SHA1HashFile(arguments.messagePtr);
+                context = SHA1_HashFile(arguments.messagePtr);
             }
             else
             {
-                context = SHA1HashString(arguments.messagePtr);
+                context = SHA1_HashString(arguments.messagePtr);
             }
 
             digest = context.DigestStr;
