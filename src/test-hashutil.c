@@ -134,14 +134,14 @@ void PerformSHA1Tests()
     // Test string hashing
     for (int i = 0; i < ArrayCount(Messages); ++i)
     {
-        sha1Context = SHA1HashString(Messages[i]);
+        sha1Context = SHA1_HashString(Messages[i]);
         EvaluateResult(Messages[i], sha1MessageTargetDigests[i], sha1Context.DigestStr);
     }
 
     // Test file hashing
     for (int i = 0; i < ArrayCount(Filenames); ++i)
     {
-        sha1Context = SHA1HashFile(Filenames[i]);
+        sha1Context = SHA1_HashFile(Filenames[i]);
         EvaluateResult(Filenames[i], sha1FileTargetDigests[i], sha1Context.DigestStr);
     }
 

@@ -1,5 +1,4 @@
 /* TODO (Aaron):
-    - Add error flag and messages to all context structs and return from hash methods rather than exit program
     - Add compare hash functionality ('-c' or '--compare' sets COMPARE_FLAG bool)
     - Support case insensitive algorithm strings
     - Add a method to each header for retrieving supported algorithms?
@@ -260,11 +259,16 @@ int main(int argc, char const *argv[])
             sha1_context context;
             if(arguments.fileFlag)
             {
-                context = SHA1HashFile(arguments.messagePtr);
+                context = SHA1_HashFile(arguments.messagePtr);
             }
             else
             {
-                context = SHA1HashString(arguments.messagePtr);
+                context = SHA1_HashString(arguments.messagePtr);
+            }
+
+            if (context.Error)
+            {
+                PrintErrorAndExit(context.ErrorStr);
             }
 
             digest = context.DigestStr;
