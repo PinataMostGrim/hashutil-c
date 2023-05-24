@@ -267,6 +267,11 @@ int main(int argc, char const *argv[])
                 context = SHA1_HashString(arguments.messagePtr);
             }
 
+            if (context.Error)
+            {
+                PrintErrorAndExit(context.ErrorStr);
+            }
+
             digest = context.DigestStr;
             break;
         }

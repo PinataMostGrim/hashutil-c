@@ -1,8 +1,5 @@
 /* TODO (Aaron):
     - Add readme / documentation to header
-    - Update file to conform more with sha2.h
-        - Guard against messages over 2^64-1 bits in length
-        - Add error handling to context so that we don't have to exit() on failure and can eliminate stdlib
 */
 
 /*  sha1.h - Implements the SHA1 hashing algorithms.
@@ -16,10 +13,11 @@
 #define HASHUTIL_SHA1_H
 
 #include <stdint.h>
+#include <stdbool.h>
 
 static uint32_t const HASHUTIL_SHA1_VERSION = 1;
 
-typedef struct sha1_context
+typedef struct
 {
     uint64_t MessageLengthBits;
     union
@@ -36,6 +34,8 @@ typedef struct sha1_context
     };
 
     char DigestStr[41];
+    bool Error;
+    char ErrorStr[64];
 } sha1_context;
 
 #ifdef __cplusplus
@@ -57,7 +57,6 @@ sha1_context SHA1_HashFile(const char *fileName);
 #ifdef HASHUTIL_SHA1_IMPLEMENTATION
 
 #include <stdio.h>
-#include <stdlib.h>
 #include <stdbool.h>
 
 #if HASHUTIL_SLOW
@@ -74,7 +73,7 @@ sha1_context SHA1_HashFile(const char *fileName);
 
 #define SHA1_ArrayCount(Array) (sizeof(Array) / sizeof((Array)[0]))
 
-#define SHA1_MESSAGE_BLOCK_SIZE 64   // 512 bits
+#define SHA1_MESSAGE_BLOCK_SIZE 64          // 512 bits
 #define SHA1_MESSAGE_LENGTH_BLOCK_SIZE 8
 
 
@@ -120,8 +119,12 @@ static void SHA1_InitializeContext(sha1_context *context)
     context->H2 = 0x98badcfe;
     context->H3 = 0x10325476;
     context->H4 = 0xc3d2e1f0;
+
+    context->Error = false;
+
 #if HASHUTIL_SLOW
     SHA1_MemorySet((uint8_t *)context->DigestStr, 0, sizeof(context->DigestStr));
+    SHA1_MemorySet((uint8_t *)context->ErrorStr, 0, sizeof(context->ErrorStr));
 #endif
 }
 
@@ -182,6 +185,8 @@ static void SHA1_UpdateHash(sha1_context *context, uint8_t *messagePtr, uint64_t
         // 16 words == 64 bytes == 512 bits
         for (int j = 0; j < 16; ++j)
         {
+            // Note (Aaron): Because we read memory in blocks of 32 bits rather than 8,
+            // we need to reverse the endianness to restore the original message's byte order.
             W[j] = (uint32_t)(*(messagePtr + i + (j * 4)) << 24)
                 | (uint32_t)(*(messagePtr + i + (j * 4) + 1) << 16)
                 | (uint32_t)(*(messagePtr + i + (j * 4) + 2) << 8)
@@ -308,10 +313,21 @@ sha1_context SHA1_HashString(char *messagePtr)
     while(*messagePtr != 0x00)
     {
         sha1_assert(messageBlockByteCount <= SHA1_MESSAGE_BLOCK_SIZE);
+        uint64_t oldMessageLengthBits = context.MessageLengthBits;
 
         messagePtr++;
         messageBlockByteCount++;
         context.MessageLengthBits += 8;
+
+        if (context.MessageLengthBits < oldMessageLengthBits)
+        {
+            sha1_assert(false);
+
+            context.Error = true;
+            sprintf(context.ErrorStr, "Invalid message length: larger than 2^64-1 bits");
+            sprintf(context.DigestStr, "");
+            return context;
+        }
 
         // Process the message in blocks of 512 bits (64 bytes or sixteen 32-bit words)
         if (messageBlockByteCount == SHA1_MESSAGE_BLOCK_SIZE)
@@ -393,8 +409,12 @@ sha1_context SHA1_HashFile(const char *fileName)
     FILE *file = fopen(fileName, "rb");
     if (!file)
     {
-        printf("Unable to open file '%s'", fileName);
-        exit(1);
+        sha1_assert(false);
+
+        context.Error = true;
+        sprintf(context.ErrorStr, "Unable to open file");
+        sprintf(context.DigestStr, "");
+        return context;
     }
 
     uint8_t buffer[SHA1_MESSAGE_BLOCK_SIZE * 2];
@@ -420,9 +440,19 @@ sha1_context SHA1_HashFile(const char *fileName)
     while(blockBytesRead)
     {
         sha1_assert(blockBytesRead <= SHA1_MESSAGE_BLOCK_SIZE);
-
+        uint64_t oldMessageLengthBits = context.MessageLengthBits;
 
         context.MessageLengthBits += (blockBytesRead * 8);
+        if (context.MessageLengthBits < oldMessageLengthBits)
+        {
+            sha1_assert(false);
+
+            context.Error = true;
+            sprintf(context.ErrorStr, "Invalid file size: larger than 2^64-1 bits");
+            sprintf(context.DigestStr, "");
+            return context;
+        }
+
         if (blockBytesRead == SHA1_MESSAGE_BLOCK_SIZE)
         {
             SHA1_UpdateHash(&context, bufferPtr, blockBytesRead);
@@ -437,9 +467,13 @@ sha1_context SHA1_HashFile(const char *fileName)
 
     if (ferror(file))
     {
-        printf("Error reading file '%s'", fileName);
         fclose(file);
-        exit(1);
+        sha1_assert(false);
+
+        context.Error = true;
+        sprintf(context.ErrorStr, "Error reading file");
+        sprintf(context.DigestStr, "");
+        return context;
     }
 
     fclose(file);
