@@ -59,14 +59,18 @@ sha1_context SHA1HashFile(const char *fileName);
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
+
 #if HASHUTIL_SLOW
 #include <string.h>
+#include <assert.h>
 #endif
 
 #if HASHUTIL_SLOW
-#define SHA1Assert(Expression) if (!(Expression)) {*(int *)0 = 0;}
+#define sha1_static_assert(expression, string) static_assert(expression, string)
+#define sha1_assert(expression) assert(expression)
 #else
-#define SHA1Assert(Expression)
+#define sha1_static_assert(expression, string)
+#define sha1_assert(expression)
 #endif
 
 #define SHA1_BLOCK_SIZE_BYTES 64        // 512 bits
@@ -114,7 +118,7 @@ static uint32_t SHA1CircularBitShiftLeft(uint32_t value, uint8_t count)
 static void SHA1UpdateHash(sha1_context *context, uint8_t *messagePtr, uint64_t byteCount)
 {
     // Assert that the message is divisible by 512-bits (64 bytes)
-    SHA1Assert(byteCount % 64 == 0);
+    sha1_assert(byteCount % 64 == 0);
 
     uint32_t A, B, C, D, E;
 #if HASHUTIL_SLOW
@@ -264,7 +268,7 @@ sha1_context SHA1HashString(char *messagePtr)
 
     while(*messagePtr != 0x00)
     {
-        SHA1Assert(byteCount <= SHA1_BLOCK_SIZE_BYTES);
+        sha1_assert(byteCount <= SHA1_BLOCK_SIZE_BYTES);
 
         messagePtr++;
         byteCount++;
@@ -297,7 +301,7 @@ sha1_context SHA1HashString(char *messagePtr)
 
     // Assert message remainder is small enough to fit into the buffer along with
     // padding and message length.
-    SHA1Assert(byteCount < ((useExtendedBuffer ? SHA1_BUFFER_SIZE_BYTES : SHA1_BLOCK_SIZE_BYTES) - 8 - 1));
+    sha1_assert(byteCount < ((useExtendedBuffer ? SHA1_BUFFER_SIZE_BYTES : SHA1_BLOCK_SIZE_BYTES) - 8 - 1));
 
     // Copy message remainder into the buffer
     SHA1MemoryCopy((uint8_t *)(messagePtr - byteCount), bufferPtr, byteCount);
@@ -379,7 +383,7 @@ sha1_context SHA1HashFile(const char *fileName)
     bytesRead = fread(buffer, readElementSize, readBlockSize, file);
     while(bytesRead)
     {
-        SHA1Assert(bytesRead <= SHA1_BLOCK_SIZE_BYTES);
+        sha1_assert(bytesRead <= SHA1_BLOCK_SIZE_BYTES);
 
         result.MessageLengthBits += (bytesRead * 8);
         // Note (Aaron): Hashes are updated using 'byteCount' rather that 'bytesRead' as
@@ -414,7 +418,7 @@ sha1_context SHA1HashFile(const char *fileName)
 
     // Assert message remainder is small enough to fit into the buffer along with
     // padding and message length.
-    SHA1Assert(byteCount < (SHA1_BUFFER_SIZE_BYTES - 8 - 1));
+    sha1_assert(byteCount < (SHA1_BUFFER_SIZE_BYTES - 8 - 1));
 
     // Apply padded 1
     uint8_t *paddingPtr = bufferPtr + byteCount;
