@@ -1,11 +1,18 @@
 # Build script for hashutil.
+# IMPORTANT: Run from project's root folder.
 
-# Requirements:
-#   - clang accessible via PATH
-#   - Script executed from the project root
-
-# Save the script's folder
+# Note: Save the script's folder in order to construct full paths for each source.
+# Some compilers seem to only output full paths on errors if this is done.
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+
+# Note: Configure these variables
+BUILD_FOLDER="bin"
+SRC_FOLDER="src"
+OUT_EXE="hashutil"
+
+INCLUDES=""
+SOURCES="$SCRIPT_DIR/$SRC_FOLDER/hashutil.c"
+LINKER_FLAGS=""
 
 # Set the DEBUG environment variable to 0 if
 # it isn't already defined
@@ -17,20 +24,18 @@ fi
 if [ $DEBUG = "1" ]
 then
     # Making debug build
-    CompilerFlags="-g -DHASHUTIL_SLOW=1 -Wno-null-dereference"
+    COMPILER_FLAGS="-g -DHASHUTIL_SLOW=1 -Wno-null-dereference"
 else
     # Making release build
-    CompilerFlags="-DHASHUTIL_SLOW=0"
+    COMPILER_FLAGS="-DHASHUTIL_SLOW=0"
 fi
 
-BuildFolder="bin"
-
 # Create build folder if it doesn't exist
-mkdir -p "$SCRIPT_DIR/$BuildFolder"
+mkdir -p "$SCRIPT_DIR/$BUILD_FOLDER"
 
 # Change to the build folder (and redirect stdout to /dev/null and the redirect stderr to stdout)
-pushd $BuildFolder > /dev/null 2>&1
+pushd $BUILD_FOLDER > /dev/null 2>&1
 
 # Compile hashutil
-clang $CompilerFlags "$SCRIPT_DIR/src/hashutil.c" -o "hashutil"
+gcc $COMPILER_FLAGS $INCLUDES $SOURCES -o $OUT_EXE
 popd > /dev/null 2>&1
