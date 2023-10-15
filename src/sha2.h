@@ -149,19 +149,19 @@ extern "C" {
 #endif
 
 uint32_t SHA2_GetVersion();
-sha2_256_context SHA2_HashStringSHA224(char *messagePtr);
-sha2_256_context SHA2_HashStringSHA256(char *messagePtr);
-sha2_256_context SHA2_HashFileSHA224(char *fileName);
-sha2_256_context SHA2_HashFileSHA256(char *fileName);
+sha2_256_context SHA2_HashStringSHA224(const char *messagePtr);
+sha2_256_context SHA2_HashStringSHA256(const char *messagePtr);
+sha2_256_context SHA2_HashFileSHA224(const char *fileName);
+sha2_256_context SHA2_HashFileSHA256(const char *fileName);
 
-sha2_512_context SHA2_HashStringSHA512_224(char *messagePtr);
-sha2_512_context SHA2_HashStringSHA512_256(char *messagePtr);
-sha2_512_context SHA2_HashStringSHA384(char *messagePtr);
-sha2_512_context SHA2_HashStringSHA512(char *messagePtr);
-sha2_512_context SHA2_HashFileSHA512_224(char *fileName);
-sha2_512_context SHA2_HashFileSHA512_256(char *fileName);
-sha2_512_context SHA2_HashFileSHA384(char *fileName);
-sha2_512_context SHA2_HashFileSHA512(char *fileName);
+sha2_512_context SHA2_HashStringSHA512_224(const char *messagePtr);
+sha2_512_context SHA2_HashStringSHA512_256(const char *messagePtr);
+sha2_512_context SHA2_HashStringSHA384(const char *messagePtr);
+sha2_512_context SHA2_HashStringSHA512(const char *messagePtr);
+sha2_512_context SHA2_HashFileSHA512_224(const char *fileName);
+sha2_512_context SHA2_HashFileSHA512_256(const char *fileName);
+sha2_512_context SHA2_HashFileSHA384(const char *fileName);
+sha2_512_context SHA2_HashFileSHA512(const char *fileName);
 
 #ifdef __cplusplus
 }
@@ -820,7 +820,7 @@ static void SHA2_ConstructDigestSHA512(sha2_512_context *context)
             context->H[7]);
 }
 
-sha2_256_context SHA2_HashStringSHA256_(char *messagePtr, sha2_digest_length digestLength)
+sha2_256_context SHA2_HashStringSHA256_(const char *messagePtr, sha2_digest_length digestLength)
 {
     sha2_256_context context;
     uint8_t messageBlockByteCount = 0;
@@ -939,7 +939,7 @@ sha2_256_context SHA2_HashStringSHA256_(char *messagePtr, sha2_digest_length dig
     return context;
 }
 
-sha2_256_context SHA2_HashFileSHA256_(char *fileName, sha2_digest_length digestLength)
+sha2_256_context SHA2_HashFileSHA256_(const char *fileName, sha2_digest_length digestLength)
 {
     sha2_256_context context;
     switch (digestLength)
@@ -1081,7 +1081,7 @@ sha2_256_context SHA2_HashFileSHA256_(char *fileName, sha2_digest_length digestL
     return context;
 }
 
-sha2_512_context SHA2_HashStringSHA512_(char *messagePtr, sha2_digest_length digestLength)
+sha2_512_context SHA2_HashStringSHA512_(const char *messagePtr, sha2_digest_length digestLength)
 {
     sha2_512_context context;
     uint16_t messageBlockByteCount = 0;
@@ -1224,7 +1224,7 @@ sha2_512_context SHA2_HashStringSHA512_(char *messagePtr, sha2_digest_length dig
     return context;
 }
 
-sha2_512_context SHA2_HashFileSHA512_(char *fileName, sha2_digest_length digestLength)
+sha2_512_context SHA2_HashFileSHA512_(const char *fileName, sha2_digest_length digestLength)
 {
     sha2_512_context context;
     switch (digestLength)
@@ -1391,63 +1391,63 @@ sha2_512_context SHA2_HashFileSHA512_(char *fileName, sha2_digest_length digestL
 }
 
 
-sha2_256_context SHA2_HashStringSHA224(char *messagePtr)
+sha2_256_context SHA2_HashStringSHA224(const char *messagePtr)
 {
     return SHA2_HashStringSHA256_(messagePtr, SHA2_DIGEST_LENGTH_SHA224);
 }
 
-sha2_256_context SHA2_HashStringSHA256(char *messagePtr)
+sha2_256_context SHA2_HashStringSHA256(const char *messagePtr)
 {
     return SHA2_HashStringSHA256_(messagePtr, SHA2_DIGEST_LENGTH_SHA256);
 }
 
-sha2_256_context SHA2_HashFileSHA224(char *fileName)
+sha2_256_context SHA2_HashFileSHA224(const char *fileName)
 {
     return SHA2_HashFileSHA256_(fileName, SHA2_DIGEST_LENGTH_SHA224);
 }
 
-sha2_256_context SHA2_HashFileSHA256(char *fileName)
+sha2_256_context SHA2_HashFileSHA256(const char *fileName)
 {
     return SHA2_HashFileSHA256_(fileName, SHA2_DIGEST_LENGTH_SHA256);
 }
 
 
-sha2_512_context SHA2_HashStringSHA512_224(char *messagePtr)
+sha2_512_context SHA2_HashStringSHA512_224(const char *messagePtr)
 {
     return SHA2_HashStringSHA512_(messagePtr, SHA2_DIGEST_LENGTH_SHA224);
 }
 
-sha2_512_context SHA2_HashStringSHA512_256(char *messagePtr)
+sha2_512_context SHA2_HashStringSHA512_256(const char *messagePtr)
 {
     return SHA2_HashStringSHA512_(messagePtr, SHA2_DIGEST_LENGTH_SHA256);
 }
 
-sha2_512_context SHA2_HashStringSHA384(char *messagePtr)
+sha2_512_context SHA2_HashStringSHA384(const char *messagePtr)
 {
     return SHA2_HashStringSHA512_(messagePtr, SHA2_DIGEST_LENGTH_SHA384);
 }
 
-sha2_512_context SHA2_HashStringSHA512(char *messagePtr)
+sha2_512_context SHA2_HashStringSHA512(const char *messagePtr)
 {
     return SHA2_HashStringSHA512_(messagePtr, SHA2_DIGEST_LENGTH_SHA512);
 }
 
-sha2_512_context SHA2_HashFileSHA512_224(char *fileName)
+sha2_512_context SHA2_HashFileSHA512_224(const char *fileName)
 {
     return SHA2_HashFileSHA512_(fileName, SHA2_DIGEST_LENGTH_SHA224);
 }
 
-sha2_512_context SHA2_HashFileSHA512_256(char *fileName)
+sha2_512_context SHA2_HashFileSHA512_256(const char *fileName)
 {
     return SHA2_HashFileSHA512_(fileName, SHA2_DIGEST_LENGTH_SHA256);
 }
 
-sha2_512_context SHA2_HashFileSHA384(char *fileName)
+sha2_512_context SHA2_HashFileSHA384(const char *fileName)
 {
     return SHA2_HashFileSHA512_(fileName, SHA2_DIGEST_LENGTH_SHA384);
 }
 
-sha2_512_context SHA2_HashFileSHA512(char *fileName)
+sha2_512_context SHA2_HashFileSHA512(const char *fileName)
 {
     return SHA2_HashFileSHA512_(fileName, SHA2_DIGEST_LENGTH_SHA512);
 }
