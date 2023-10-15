@@ -15,6 +15,10 @@
     family of algorithms. Run 'hashutil --help' for usage instructions.
 */
 
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+
 #define HASHUTIL_MD5_IMPLEMENTATION
 #include "md5.h"
 #define HASHUTIL_SHA1_IMPLEMENTATION
@@ -22,43 +26,9 @@
 #define HASHUTIL_SHA2_IMPLEMENTATION
 #include "sha2.h"
 
+#include "supported_hashes.h"
 #include "common.c"
-
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-
-
-static char *HashAlgorithmMnemonics[] =
-{
-    "unknown",
-    "md5",
-    "sha1",
-    "sha224",
-    "sha256",
-    "sha384",
-    "sha512",
-    "sha512-224",
-    "sha512-256",
-};
-
-
-typedef enum hash_algorithm
-{
-    hash_unknown,
-    hash_md5,
-    hash_sha1,
-    hash_sha224,
-    hash_sha256,
-    hash_sha384,
-    hash_sha512,
-    hash_sha512_224,
-    hash_sha512_256,
-
-    hash_algorithm_count,
-
-} hash_algorithm;
-
+#include "supported_hashes.c"
 
 typedef struct arguments
 {
@@ -71,29 +41,6 @@ typedef struct arguments
     hash_algorithm algorithm;
     char *messagePtr;
 } arguments;
-
-
-hash_algorithm GetHashAlgorithm(char *algorithmPtr)
-{
-    for (int i = 0; i < hash_algorithm_count; ++i)
-    {
-        if (strcmp(algorithmPtr, HashAlgorithmMnemonics[i]) == 0)
-        {
-            return (hash_algorithm)i;
-        }
-    }
-
-    return hash_unknown;
-}
-
-
-char *GetHashMenemonic(hash_algorithm algorithm)
-{
-    hashutil_static_assert(ArrayCount(HashAlgorithmMnemonics) == hash_algorithm_count,
-              "'hash_algorithm' and 'HashAlgorithmMnemonics' do not share the sane number of elements\n");
-
-    return HashAlgorithmMnemonics[algorithm];
-}
 
 
 static void PrintUsage()
@@ -135,7 +82,7 @@ static void PrintErrorAndExit(char *errorStr)
 }
 
 
-void ParseArgs(int argc, char const *argv[], arguments *arguments)
+static void ParseArgs(int argc, char const *argv[], arguments *arguments)
 {
     bool processOptionalArgs = true;
     bool algorithmConsumed = false;
