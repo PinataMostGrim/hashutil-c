@@ -19,7 +19,7 @@
 static bool IsSystemLittleEndian()
 {
     uint32_t endianTest = 0xdeadbeef;
-    bool isLittleEndian = *(unsigned char *)&endianTest = 0xef;
+    bool isLittleEndian = (*(unsigned char *)&endianTest == 0xef);
 
     return isLittleEndian;
 }
