@@ -2,47 +2,80 @@
 #include <sys/stat.h>
 
 #include "buffer.h"
+#include "supported_hashes.h"
+
 #include "buffer.c"
 #include "common.c"
+#include "supported_hashes.c"
 
 #define HASHUTIL_MD5_IMPLEMENTATION
 #include "md5.h"
+#define HASHUTIL_SHA1_IMPLEMENTATION
+#include "sha1.h"
+#define HASHUTIL_SHA2_IMPLEMENTATION
+#include "sha2.h"
+
 #define REPETITION_TESTER_IMPLEMENTATION
 #include "repetition_tester.h"
 
 
 typedef struct read_parameters read_parameters;
-typedef struct test_function test_function;
-typedef void test_func_ptr(repetition_tester *tester, read_parameters *params);
-
-static void TestMD5HashFile(repetition_tester *tester, read_parameters *params);
 
 struct read_parameters
 {
     const char *FileName;
     buffer Buffer;
+    hash_algorithm HashAlgorithm;
 };
 
-struct test_function
-{
-    char const *Name;
-    test_func_ptr *Func;
+hash_algorithm TEST_HASHES[] = {
+    hash_md5,
+    hash_sha1,
+    hash_sha224,
+    hash_sha256,
+    hash_sha384,
+    hash_sha512,
+    hash_sha512_224,
+    hash_sha512_256,
 };
 
-test_function TEST_FUNCTIONS[] =
-{
-    {"TestMD5HashFile", TestMD5HashFile },
-};
 
-
-static void TestMD5HashFile(repetition_tester *tester, read_parameters *params)
+static void TestHashFile(repetition_tester *tester, read_parameters *params)
 {
     while (IsTesting(tester))
     {
         BeginTime(tester);
-        MD5_HashFile(params->FileName);
+        switch (params->HashAlgorithm)
+        {
+            case hash_md5:
+                MD5_HashFile(params->FileName);
+                break;
+            case hash_sha1:
+                SHA1_HashFile(params->FileName);
+                break;
+            case hash_sha224:
+                SHA2_HashFileSHA224(params->FileName);
+                break;
+            case hash_sha256:
+                SHA2_HashFileSHA256(params->FileName);
+                break;
+            case hash_sha384:
+                SHA2_HashFileSHA384(params->FileName);
+                break;
+            case hash_sha512:
+                SHA2_HashFileSHA512(params->FileName);
+                break;
+            case hash_sha512_224:
+                SHA2_HashFileSHA512_224(params->FileName);
+                break;
+            case hash_sha512_256:
+                SHA2_HashFileSHA512_256(params->FileName);
+                break;
+            default:
+                Error(tester, "Unhandled hash_algorithm!");
+                break;
+        }
         EndTime(tester);
-
         CountBytes(tester, params->Buffer.SizeBytes);
     }
 }
@@ -77,18 +110,18 @@ int main(int argCount, char const *args[])
         return 1;
     }
 
-    repetition_tester testers[ArrayCount(TEST_FUNCTIONS)] = {0};
+    repetition_tester testers[ArrayCount(TEST_HASHES)] = {0};
 
     for(;;)
     {
-        for(uint32_t funcIndex = 0; funcIndex < ArrayCount(TEST_FUNCTIONS); ++funcIndex)
+        for(uint32_t funcIndex = 0; funcIndex < ArrayCount(TEST_HASHES); ++funcIndex)
         {
             repetition_tester *tester = &testers[funcIndex];
-            test_function testFunc = TEST_FUNCTIONS[funcIndex];
+            params.HashAlgorithm = TEST_HASHES[funcIndex];
 
-            printf("\n--- %s ---\n", testFunc.Name);
+            printf("\n--- %s ---\n", GetHashMenemonic(params.HashAlgorithm));
             NewTestWave(tester, params.Buffer.SizeBytes, cpuTimerFrequency, secondsToTry);
-            testFunc.Func(tester, &params);
+            TestHashFile(tester, &params);
         }
     }
 
