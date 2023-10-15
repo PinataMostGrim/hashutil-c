@@ -6,6 +6,7 @@
     - Create library for parsing command line arguments
     - Consider compiling hashutil with C++ to take advantage of some features (declare arra of const strings)
     - Enforce C99 in build batch files
+    - Add flag for outputting the hash only (no hash / file / configuration output)
 */
 
 /*  hashutil.c
